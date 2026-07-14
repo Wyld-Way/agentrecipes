@@ -5,6 +5,9 @@ import type { MetadataRoute } from 'next';
 // outward-publish gate) to open it up.
 const indexable = process.env.PUBLIC_INDEX === 'true';
 
+const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL ?? 'https://agentrecipes-ai.vercel.app';
+
 export default function robots(): MetadataRoute.Robots {
   if (!indexable) {
     return {
@@ -13,5 +16,6 @@ export default function robots(): MetadataRoute.Robots {
   }
   return {
     rules: { userAgent: '*', allow: '/' },
+    sitemap: new URL('/sitemap.xml', siteUrl).toString(),
   };
 }

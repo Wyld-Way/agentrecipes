@@ -1,12 +1,39 @@
 ---
-title: LLM prompt ops
-description: Managed prompts, layered evals, and fail-open delivery for LLM generation features on a live path.
+title: Keep an AI feature reliable in production while you keep changing the prompt
+description: You tweak the prompt and quietly break something else; the model makes things up; the provider hiccups and your feature goes dark. Here's how to run an AI feature so none of that happens — change prompts without a deploy, auto-check every output, never hard-fail, and prove a change is better before it ships.
 icon: Workflow
+recipe: true
+system: LLM prompt ops
+maturity: internal
+steps:
+  - name: Make the prompt service the source of truth, and the repo the fallback
+    text: Every prompt lives in a versioned prompt service under a feature key with a production label. A copy stays in code as a cold-start fallback only; the disk copy is never auto-pushed.
+  - name: Build one prompt assembler with a fail-open chain
+    text: All generation goes through one function that tries the managed prompt, compiles variables, and falls back to the in-code template on any failure. The user request never fails because the prompt service is down.
+  - name: Cache short, keep last-good forever
+    text: In-memory cache with a short TTL for near-instant promotion, plus an indefinitely-held last-good version as the stale fallback. Broadcast invalidation cheaply across a cluster.
+  - name: Seed inert, promote by hand
+    text: The seeding script defaults to a seed-candidate label, never production. Going live needs an explicit flag and a human promoting the label. Keep a timestamped label-rollback script written before you need it.
+  - name: Trace every generation and link it to the prompt version
+    text: One trace per call carrying user and session ids and input; one generation object per model call linked to the fetched prompt version, so prompt-version A/B comparison is possible.
+  - name: Score with stable names, pushed fail-safe
+    text: Define a small vocabulary of score names and never rename them. Wrap score pushes so a telemetry error can never reach the user path.
+  - name: Layer the evals — deterministic first, judge second, grounding third
+    text: A sub-10ms deterministic detector on 100% of output, an async observe-only LLM-judge rubric that never gates delivery, and a grounding judge where facts matter that flags contradictions and invented specifics.
+  - name: Tier models per surface, with fallback chains
+    text: Frontier model for the flagship surface (off the critical path if you can pre-generate), a cheap tier elsewhere with a mid tier as fallback, judges on the cheap tier. Keep the system prompt universal for provider-side prompt caching.
+  - name: Close the loop with datasets from live traces
+    text: Pull recent traces (optionally filtered to failures) into a dataset. Test any prompt change against real inputs before its version gets the production label.
 ---
+
+<p className="-mt-2 text-fd-muted-foreground">
+  Recipe: <strong className="text-fd-foreground">LLM prompt ops</strong>
+</p>
 
 <div className="not-prose my-6 rounded-lg border bg-fd-card p-4 text-sm">
   <div className="mb-2"><MaturityBadge level="internal" showHint /></div>
   <dl className="grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1 text-fd-muted-foreground">
+    <dt className="font-medium text-fd-foreground">System</dt><dd>LLM prompt ops</dd>
     <dt className="font-medium text-fd-foreground">Slug</dt><dd>llm-prompt-ops</dd>
     <dt className="font-medium text-fd-foreground">Version</dt><dd>0.1</dd>
     <dt className="font-medium text-fd-foreground">Origin</dt><dd>Abstracted from a live consumer content-generation pipeline.</dd>
@@ -15,13 +42,29 @@ icon: Workflow
   </dl>
 </div>
 
+## The problem
+
+You built a feature where an AI model writes something for your users — chat
+replies, summaries, product descriptions, support answers. It worked in the demo.
+Then in production: you tweak the prompt to fix one thing and quietly break
+another, and nobody notices for days. The model starts making things up. The
+morning the AI provider has a hiccup, your whole feature goes dark. And when you
+do change the prompt, you can't actually prove the new version is better than the
+old one — you just hope.
+
 ## What you get
 
-A production-grade way to run LLM generation features: prompts managed and
-versioned outside your code, every generation traced and scored, quality measured
-on 100% of output without ever blocking a user, and prompt changes that can be
-tested against real traffic before they go live — plus a rollback path for the day
-someone regresses production anyway.
+A way to run that AI feature so none of the above happens:
+
+- **Change the prompt without a code deploy** — and without silently breaking it,
+  because prompts live in one managed place with versions and one-click rollback,
+  not buried in your code.
+- **Every single output gets quality-checked automatically** — cheaply, in the
+  background, so you catch the feature getting worse before your users do.
+- **The feature never hard-fails.** When the model or the provider blips, it
+  degrades to something usable instead of throwing an error at the user.
+- **Prove a prompt change is better before it ships** — test the new version
+  against real past inputs, compare the scores, then promote it.
 
 ## Use when / skip when
 

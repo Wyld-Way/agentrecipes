@@ -16,15 +16,43 @@ const inter = Inter({
 const indexable = process.env.PUBLIC_INDEX === 'true';
 
 const siteUrl =
-  process.env.NEXT_PUBLIC_SITE_URL ?? 'https://agentrecipes.vercel.app';
+  process.env.NEXT_PUBLIC_SITE_URL ?? 'https://agentrecipes-ai.vercel.app';
+
+// Search-intent title for the home page — people search the problem, not our
+// name. The per-page frontmatter title (the use-case headline) overrides this
+// via the `%s — Agent Recipes` template on recipe pages.
+const homeTitle = 'Agent Recipes — proven recipes for building AI and agent systems';
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: appName,
+    default: homeTitle,
     template: `%s — ${appName}`,
   },
   description: appTagline,
+  applicationName: appName,
+  keywords: [
+    'AI recipes',
+    'agent recipes',
+    'LLM in production',
+    'prompt ops',
+    'LLM evals',
+    'build AI features',
+    'agent patterns',
+  ],
+  alternates: { canonical: '/' },
+  openGraph: {
+    type: 'website',
+    siteName: appName,
+    url: siteUrl,
+    title: homeTitle,
+    description: appTagline,
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: homeTitle,
+    description: appTagline,
+  },
   robots: indexable
     ? undefined
     : {

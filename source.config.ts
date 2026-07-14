@@ -1,5 +1,20 @@
 import { defineConfig, defineDocs } from 'fumadocs-mdx/config';
 import { metaSchema, pageSchema } from 'fumadocs-core/source/schema';
+import { z } from 'zod';
+
+// Extend the page frontmatter with the fields that drive JSON-LD (a recipe IS a
+// schema.org HowTo) and use-case framing. All optional, so non-recipe pages
+// (the catalog, the format reference) validate unchanged.
+const recipePageSchema = pageSchema.extend({
+  recipe: z.boolean().optional(),
+  system: z.string().optional(),
+  maturity: z
+    .enum(['draft', 'internal', 'field-tested', 'proven'])
+    .optional(),
+  steps: z
+    .array(z.object({ name: z.string(), text: z.string() }))
+    .optional(),
+});
 
 // You can customize Zod schemas for frontmatter and `meta.json` here
 // see https://fumadocs.dev/docs/mdx/collections
@@ -19,7 +34,7 @@ export const docs = defineDocs({
       '!**/*-internal.mdx',
       '!**/RECEIPTS-internal.md',
     ],
-    schema: pageSchema,
+    schema: recipePageSchema,
     postprocess: {
       includeProcessedMarkdown: true,
     },
