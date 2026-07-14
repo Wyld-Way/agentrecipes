@@ -20,7 +20,12 @@ const siteRoot = join(__dirname, '..');
 // The office recipes live in a sibling repo of the site.
 const officeRecipes = join(siteRoot, '..', 'wyldway-office', 'recipes');
 
-const SLUGS = ['llm-prompt-ops', 'grounded-generation', 'shared-agent-memory'];
+const SLUGS = [
+  'llm-prompt-ops',
+  'grounded-generation',
+  'shared-agent-memory',
+  'agent-worker-fleet',
+];
 
 // A file is internal (never published) if its name matches these.
 const isInternal = (name) =>

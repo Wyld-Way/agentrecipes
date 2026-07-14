@@ -1,4 +1,4 @@
 {
   "title": "Recipes",
-  "pages": ["index", "---Recipes---", "llm-prompt-ops", "grounded-generation", "shared-agent-memory", "---Reference---", "format"]
+  "pages": ["index", "---Recipes---", "llm-prompt-ops", "grounded-generation", "shared-agent-memory", "agent-worker-fleet", "---Reference---", "format"]
 }
