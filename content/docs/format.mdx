@@ -1,0 +1,95 @@
+---
+title: The recipe format
+description: What a recipe is, its required sections, the maturity lifecycle, and the receipts discipline.
+icon: FileText
+---
+
+> A recipe is a plug-and-play artifact someone else can implement fresh in their
+> own stack — abstracted knowledge, never our code. Written for three readers at
+> once: a maintainer, a DIY builder, and an open-source contributor.
+
+## What a recipe IS
+
+One proven system, abstracted to its container: the decisions, the steps, the
+config shapes, the guardrails — with the content slots left open. The reader
+implements it in their own codebase in hours-to-days, without ever seeing ours.
+The clean-room test is the bar: if a team that is legally forbidden from copying
+our code can implement the recipe, it's a recipe. If they'd need our source, it's
+documentation, not a recipe.
+
+## What makes ours different: receipts
+
+Every recipe carries an evidence ledger — real production numbers, real failure
+modes, real costs, each claim cited or marked ESTIMATE. A recipe without receipts
+is a <MaturityBadge level="draft" /> and is labeled so. This is the
+claims-inflation discipline turned into the product's moat: the internet is full
+of untested prompt libraries; nobody ships the receipts.
+
+## Anatomy (required sections, in order)
+
+Every recipe opens with frontmatter:
+
+```yaml
+---
+name: <human title>
+slug: <kebab-case>
+version: 0.1
+maturity: draft | internal | field-tested | proven   # see Lifecycle below
+origin: <the system this was abstracted from>
+consumers: [<who has implemented it, incl. us>]
+license: <CC-BY-SA-4.0 default when published; internal until then>
+---
+```
+
+1. **What you get** — the outcome in 2–3 sentences, in the reader's terms.
+2. **Use when / skip when** — honest fit filter, including who this is NOT for.
+3. **Ingredients** — services, models, accounts, and expected costs. BYO
+   everything; a recipe never requires our infrastructure.
+4. **The recipe** — numbered steps. Each step names the decision being made and
+   why, then the move. Config/schema shapes and pseudocode allowed; our source
+   code never. `{{SLOTS}}` mark where the reader's content goes.
+5. **The receipts** — the evidence ledger: real production numbers, cost ranges
+   (quote the range, never the floor), what n the evidence is from. In the recipe
+   body, numbers are attributed only to "origin production" — the detailed
+   citations live in the internal evidence file (see Rules).
+6. **What might go wrong** — failure modes abstracted from real incidents: the
+   conditions under which each one bites, the symptom, and the move that prevents
+   it. Every recipe includes at least one lesson learned the hard way — written
+   so the reader recognizes their own risk, not our history.
+7. **The pulse** — who or what keeps this alive after implementation: eval
+   cadence, staleness checks, drift alarms. A system with no pulse dies quietly;
+   a recipe that omits the pulse sells a stall.
+8. **Provenance** — where the pattern came from, what it superseded, license.
+
+## Rules
+
+- **Container, not content.** Templatize the fixed shapes; leave the client's
+  content as slots. Pre-filled content anchors wrong.
+- **Receipts or the draft label.** No production evidence →
+  <MaturityBadge level="draft" />, visibly. Contributors are held to the same
+  bar.
+- **Abstraction is the legal boundary.** Recipes carry patterns and shapes, never
+  code lifted from a proprietary repo. This is what lets an AGPL or clean-room
+  project consume a recipe safely.
+- **The pulse section is mandatory.** Non-negotiable, learned the hard way.
+- **Abstract the scar, keep the lesson.** The recipe body never carries
+  origin-identifying details — no internal ticket ids, incident names, version
+  numbers, file paths, or dates. Failure modes read as "what might go wrong when
+  X" — the generalized condition, not a war story. The full citations backing
+  every number and scar live in an internal evidence file beside the recipe,
+  which never publishes: it's how we hold the claims-inflation bar without
+  shipping our case files.
+- **One recipe, one system.** Compose recipes; don't write omnibuses.
+- **Public by default.** A recipe is publishable unless flagged closed. Openness
+  IS the strategy — the library only compounds if recipes flow to it.
+
+## Lifecycle
+
+<MaturityBadge level="draft" showHint /><br />
+<MaturityBadge level="internal" showHint /><br />
+<MaturityBadge level="field-tested" showHint /><br />
+<MaturityBadge level="proven" showHint />
+
+Maturity is the honesty signal, not a permission gate. A draft or internal recipe
+may still publish — labeled as such — so long as the label tells the truth about
+how much evidence stands behind it.
