@@ -26,18 +26,23 @@ and measurable — not a black box that regresses silently.
     href="/docs/llm-prompt-ops"
     description="Recipe: LLM prompt ops (internal). Change prompts without a deploy, every output auto-checked, never hard-fails when the provider blips, and prove a change is better before it ships."
   />
+  <Card
+    title="Make an LLM talk about the real world without making things up"
+    href="/docs/grounded-generation"
+    description="Recipe: grounded generation (internal). The model only phrases facts your data layer asserts — every fact carries provenance, unsourced and stale claims are stripped, and it degrades to typed silence instead of inventing."
+  />
 </Cards>
 
 ## Building agents
 
-Recipes for autonomous and semi-autonomous agent systems — coming as they're
-harvested from proven origins.
+You run agents that need infrastructure the framework doesn't give you — shared
+state, memory that survives, patterns proven in production.
 
 <Cards>
   <Card
-    title="More recipes on the way"
-    href="/docs/format"
-    description="Each recipe is one proven system with receipts. See the format for the bar every recipe (and every outside contribution) is held to."
+    title="Give your AI agents a shared memory that survives every session"
+    href="/docs/shared-agent-memory"
+    description="Recipe: the office brain (internal). A durable, file-based brain your agents read at session start and write at session end — so knowledge compounds across sessions and across agents instead of resetting."
   />
 </Cards>
 
