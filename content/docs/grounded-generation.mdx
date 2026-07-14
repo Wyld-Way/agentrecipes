@@ -40,19 +40,7 @@ steps:
   </dl>
 </div>
 
-<Callout title="Install this recipe as a skill" type="info">
-  This recipe ships with an installable **skill** (`SKILL.md`) plus reference
-  code (`grounding-gate.ts` — the classify-and-block primitive) that walks an
-  agent through implementing the discipline in your own codebase. Once the
-  public recipe repo is wired, you'll be able to add it with one command:
-
-  ```bash
-  npx skills add grounded-generation
-  ```
-
-  Until then, the skill and its reference code live beside this recipe in the
-  source; the recipe below is complete enough to implement by hand.
-</Callout>
+<SkillDownload slug="grounded-generation" />
 
 ## The problem
 
@@ -183,6 +171,14 @@ internal evidence file):
   it was last reviewed — no magic numbers buried in code.
 - The **replay archive** keeps the raw data behind every generation, so any future
   rule can be graded against the past.
+
+## The skill
+
+The installable skill and its reference code, in full — copy any file, or grab
+the whole bundle above. This is what an agent follows to build the discipline in
+your codebase.
+
+<SkillFiles slug="grounded-generation" />
 
 ## Provenance
 

@@ -38,19 +38,7 @@ steps:
   </dl>
 </div>
 
-<Callout title="Install this recipe as a skill" type="info">
-  This recipe ships with an installable **skill** (`SKILL.md`) plus reference
-  files (`AGENTS.md`, a memory-file schema) that walk an agent through building
-  the brain in your own repo. Once the public recipe repo is wired, you'll be
-  able to add it with one command:
-
-  ```bash
-  npx skills add shared-agent-memory
-  ```
-
-  Until then, the skill and its reference files live beside this recipe in the
-  source; the recipe below is complete enough to implement by hand.
-</Callout>
+<SkillDownload slug="shared-agent-memory" />
 
 ## The problem
 
@@ -181,6 +169,14 @@ What keeps it alive:
   compounding.
 - Keep files **small and current** — a memory file that grows into a history
   document should be trimmed to current state; the git history holds the past.
+
+## The skill
+
+The installable skill and its reference files, in full — copy any file, or grab
+the whole bundle above. This is what an agent follows to set up the brain in your
+repo.
+
+<SkillFiles slug="shared-agent-memory" />
 
 ## Provenance
 

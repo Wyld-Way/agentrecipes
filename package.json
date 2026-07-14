@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "sync:skills": "node scripts/sync-skills.mjs",
+    "prebuild": "node scripts/sync-skills.mjs",
+    "predev": "node scripts/sync-skills.mjs",
     "build": "next build",
     "dev": "next dev",
     "start": "next start",
