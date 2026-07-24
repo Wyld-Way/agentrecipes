@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+
+# Next.js build output
+.next/
+out/
+
+# Fumadocs generated source collection
+.source/
+next-env.d.ts
+
+# Vercel
+.vercel/
+
+# Env
+.env*.local
+
+# Logs
+npm-debug.log*
+
+# OS
+.DS_Store
