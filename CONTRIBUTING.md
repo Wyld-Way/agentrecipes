@@ -75,6 +75,14 @@ positioned to produce).
 
 ### 1. PR directly into this repo
 
+> This path is for external/community submissions that don't live in the
+> internal `wyldway-office` repo. Office-authored recipes are single-sourced
+> from `wyldway-office/recipes/<slug>/RECIPE.md` — `scripts/sync-recipes.mjs`
+> generates their `.mdx`, catalog card, and sidebar entry automatically (see
+> the repo README), so nobody hand-writes those anymore (office#202). If
+> you're an office recipe author, write `RECIPE.md` there instead of
+> following the steps below.
+
 Add your recipe under `content/docs/<slug>.mdx` following the anatomy above,
 plus:
 

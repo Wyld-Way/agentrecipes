@@ -1,25 +1,25 @@
 ---
-title: Give your AI agents a shared memory that survives every session
-description: Your agents forget everything when a session ends, re-derive settled facts, and contradict decisions nobody wrote down. Here's how to give them a durable, file-based shared brain — one place agents read at session start and write back at session end, so knowledge compounds instead of resetting.
+title: "Give your AI agents a shared memory that survives every session"
+description: "Your agents forget everything when a session ends, re-derive settled facts, and contradict decisions nobody wrote down. Here's how to give them a durable, file-based shared brain — one place agents read at session start and write back at session end, so knowledge compounds instead of resetting."
 icon: Brain
 recipe: true
-system: the office brain
+system: "the office brain"
 maturity: internal
 steps:
-  - name: Make one repo the single source of truth
-    text: Durable knowledge, decisions, preferences, and current state all live in one version-controlled repo as plain markdown. Agents read from it at session start and write back at session end. One brain, one place.
-  - name: Separate knowledge by how it changes
-    text: Four kinds, four homes. Durable knowledge and preferences (facts that stay true). Current status (overwritten, not appended). Decisions (append-only, with the why). Time-bound work (dated, archived when done). Mixing them is why memory rots.
-  - name: One fact per file, plus an index
-    text: Each durable memory is its own small file with frontmatter — a stable name slug, a one-line description used to judge relevance on recall, and a type. A single index file lists one line per memory so an agent can scan before loading bodies. One monolithic file becomes unfindable and un-mergeable.
-  - name: Write the read/write protocol into the agent's rules
-    text: In the file the agent loads every session, state it plainly — at session start read the index plus the relevant files, at session end write back what changed. The protocol is what makes the brain live; without it you have a folder nobody opens.
-  - name: Prefer artifacts over chat
-    text: A result that matters gets written to a file in the brain, not left in a conversation that evaporates. Quick lookups stay in chat; the things meant to compound get a place to be found again.
-  - name: Link related memories
-    text: A lightweight [[other-memory-name]] link between files lets the brain form a graph — an agent reading one fact discovers the related ones. A link to a memory that doesn't exist yet marks something worth writing later.
-  - name: Give it a curator
-    text: Memory rots without one. A human or a dedicated agent role runs a periodic consolidation pass that merges duplicates, reconciles stale facts against reality, prunes the dead, and keeps the index honest and files small.
+  - name: "Make one repo the single source of truth (the \"constitution\")"
+    text: "Durable knowledge, decisions, preferences, and current state all live here as plain markdown. Agents read from it at the start of a session and write back at the end. One brain, one place."
+  - name: "Separate knowledge by how it changes"
+    text: "Four kinds, four homes — mixing them is why memory rots: - Durable knowledge / preferences — facts that stay true (who the user is, how they work, hard-won lessons). One fact per file. - Current status — what exists, what's live, what's in flight. Overwritten, not appended: current state, not a changelog. - Decisions — settled calls, with the why. Append-only; a decision is a record, not a status. - Time-bound work — plans with a lifecycle (draft → active → done → archived). Dated, and archived when finished, never deleted."
+  - name: "One fact per file, plus an index"
+    text: "Each durable memory is its own small file with frontmatter — a name (stable slug), a one-line description (used to judge relevance on recall), and a type. A single index file lists one line per memory so an agent can scan what exists before loading the bodies. One monolithic memory file becomes unfindable and un-mergeable; small files + an index scale."
+  - name: "Write the read/write protocol into the agent's rules"
+    text: "In the file your agent loads every session, state plainly: at session start, read the index + the relevant files; at session end, write back what changed. The protocol is what makes the brain live — without it you have a folder nobody opens. See reference/AGENTS.md."
+  - name: "Prefer artifacts over chat"
+    text: "A result that matters gets written to a file in the brain, not left in a conversation that evaporates. If it's worth producing, it's worth a place to be found again. (Quick lookups stay in chat — don't file everything; file the things meant to compound.)"
+  - name: "Link related memories"
+    text: "A lightweight [[other-memory-name]] link between files lets the brain form a graph — an agent reading one fact discovers the related ones. A link to a memory that doesn't exist yet is fine; it marks something worth writing later."
+  - name: "Give it a curator (the pulse — see below)"
+    text: "Memory rots without one."
 ---
 
 <p className="-mt-2 text-fd-muted-foreground">
@@ -89,15 +89,14 @@ end. One brain, one place.
 
 **2. Separate knowledge by how it changes.** Four kinds, four homes — mixing them
 is why memory rots:
-
-- **Durable knowledge / preferences** — facts that stay true (who the user is,
-  how they work, hard-won lessons). One fact per file.
-- **Current status** — what exists, what's live, what's in flight. Overwritten,
-  not appended: current state, not a changelog.
-- **Decisions** — settled calls, with the why. Append-only; a decision is a
-  record, not a status.
-- **Time-bound work** — plans with a lifecycle (draft → active → done →
-  archived). Dated, and archived when finished, never deleted.
+   - **Durable knowledge / preferences** — facts that stay true (who the user is,
+     how they work, hard-won lessons). One fact per file.
+   - **Current status** — what exists, what's live, what's in flight. Overwritten,
+     not appended: current state, not a changelog.
+   - **Decisions** — settled calls, with the why. Append-only; a decision is a
+     record, not a status.
+   - **Time-bound work** — plans with a lifecycle (draft → active → done →
+     archived). Dated, and archived when finished, never deleted.
 
 **3. One fact per file, plus an index.** Each durable memory is its own small file
 with frontmatter — a `name` (stable slug), a one-line `description` (used to judge
@@ -108,7 +107,8 @@ file becomes unfindable and un-mergeable; small files + an index scale.
 **4. Write the read/write protocol into the agent's rules.** In the file your agent
 loads every session, state plainly: *at session start, read the index + the
 relevant files; at session end, write back what changed.* The protocol is what
-makes the brain live — without it you have a folder nobody opens.
+makes the brain live — without it you have a folder nobody opens. See
+`reference/AGENTS.md`.
 
 **5. Prefer artifacts over chat.** A result that matters gets written to a file in
 the brain, not left in a conversation that evaporates. If it's worth producing,
@@ -172,11 +172,9 @@ What keeps it alive:
 
 ## The skill
 
-The installable skill and its reference files, in full — copy any file, or grab
-the whole bundle above. This is what an agent follows to set up the brain in your
-repo.
+The installable skill and its reference code, in full — copy any file, or grab the whole bundle above. This is what an agent follows to build the pattern in your codebase.
 
-<SkillFiles slug="shared-agent-memory" />
+&lt;SkillFiles slug="shared-agent-memory" />
 
 ## Provenance
 

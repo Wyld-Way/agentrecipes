@@ -1,0 +1,60 @@
+# reference/growth-bench.schema.yaml — shape for a single growth-seed entry
+# in the portfolio bench doc (RECIPE.md steps 1-3, 7-9). Adapt the field
+# names to whatever doc format your team already uses (a wiki table, a
+# spreadsheet, a YAML file like this one) — the SHAPE is what matters, not
+# the storage format.
+#
+# `reference/kill-signal-check.sh` parses entries in roughly this shape to
+# flag anything overdue for its portfolio review.
+
+seeds:
+  - slug: example-seed-slug          # stable id, used by the checker script
+    status: seeded                   # seeded | watering | took-root | composted
+    bet: >
+      One line: the seed and why it could meaningfully grow a channel,
+      audience, or product surface.
+    loop_back: >
+      One line: exactly how this seed is meant to feed the core product —
+      the specific metric or behavior it should move. Required before a
+      seed can move to `watering`.
+    smallest_real_v1: >
+      What ships first — concrete enough that "is this done" has a yes/no
+      answer, not a roadmap with several phases.
+    kill_signal:
+      metric: ""                     # e.g. "organic sessions" or "email signups"
+      threshold: null                # e.g. 300 — required before `watering`
+      by_date: null                  # ISO date — required before `watering`
+    owner:
+      portfolio_holder: ""           # who holds the bench overall
+      dedicated_owner: null          # set only once status = took-root
+    lesson: null                     # one sentence, filled in on composting or graduation
+    execution_roles:
+      on_site: null                  # who/what does ranking + routing work, once watering
+      off_site: null                 # who/what does resource-building + outreach, once watering
+
+# Example of a fully filled entry, for a seed that graduated:
+#
+# - slug: niche-finder-tool
+#   status: took-root
+#   bet: >
+#     A high-intent, brandable parked domain funnels a specific niche
+#     audience into the core app.
+#   loop_back: >
+#     SEO + a cross-promo card into the core app's signup flow.
+#   smallest_real_v1: >
+#     One real tool page + one evergreen guide + full technical SEO +
+#     analytics, shipped together, not staged.
+#   kill_signal:
+#     metric: "organic sessions OR signups"
+#     threshold: 500
+#     by_date: "2027-01-15"
+#   owner:
+#     portfolio_holder: "growth-lead"
+#     dedicated_owner: "seed-owner-role"
+#   lesson: >
+#     A directory/finder-style tool is trivially replaceable by a general
+#     search engine — its only defensible reason to exist was the funnel
+#     and the friction removed, not the content itself.
+#   execution_roles:
+#     on_site: "on-site-role"
+#     off_site: "off-site-role"
