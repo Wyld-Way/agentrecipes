@@ -4,9 +4,9 @@
   "private": true,
   "scripts": {
     "sync:skills": "node scripts/sync-skills.mjs",
-    "check:recipe-docs": "node scripts/check-recipe-docs.mjs",
-    "prebuild": "node scripts/sync-skills.mjs && node scripts/check-recipe-docs.mjs",
-    "predev": "node scripts/sync-skills.mjs && node scripts/check-recipe-docs.mjs",
+    "sync:recipes": "node scripts/sync-recipes.mjs",
+    "prebuild": "node scripts/sync-recipes.mjs && node scripts/sync-skills.mjs",
+    "predev": "node scripts/sync-recipes.mjs && node scripts/sync-skills.mjs",
     "build": "next build",
     "dev": "next dev",
     "start": "next start",
@@ -31,7 +31,6 @@
     "@types/react-dom": "^19.2.3",
     "postcss": "^8.5.17",
     "tailwindcss": "^4.3.2",
-    "typescript": "^6.0.3",
-    "yaml": "2.9.0"
+    "typescript": "^6.0.3"
   }
 }

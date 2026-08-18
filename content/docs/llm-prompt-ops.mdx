@@ -1,29 +1,29 @@
 ---
-title: Keep an AI feature reliable in production while you keep changing the prompt
-description: You tweak the prompt and quietly break something else; the model makes things up; the provider hiccups and your feature goes dark. Here's how to run an AI feature so none of that happens — change prompts without a deploy, auto-check every output, never hard-fail, and prove a change is better before it ships.
+title: "Keep an AI feature reliable in production while you keep changing the prompt"
+description: "You tweak the prompt and quietly break something else; the model makes things up; the provider hiccups and your feature goes dark. Here's how to run an AI feature so none of that happens — change prompts without a deploy, auto-check every output, never hard-fail, and prove a change is better before it ships."
 icon: Workflow
 recipe: true
-system: LLM prompt ops
+system: "LLM prompt ops"
 maturity: internal
 steps:
-  - name: Make the prompt service the source of truth, and the repo the fallback
-    text: Every prompt lives in a versioned prompt service under a feature key with a production label. A copy stays in code as a cold-start fallback only; the disk copy is never auto-pushed.
-  - name: Build one prompt assembler with a fail-open chain
-    text: All generation goes through one function that tries the managed prompt, compiles variables, and falls back to the in-code template on any failure. The user request never fails because the prompt service is down.
-  - name: Cache short, keep last-good forever
-    text: In-memory cache with a short TTL for near-instant promotion, plus an indefinitely-held last-good version as the stale fallback. Broadcast invalidation cheaply across a cluster.
-  - name: Seed inert, promote by hand
-    text: The seeding script defaults to a seed-candidate label, never production. Going live needs an explicit flag and a human promoting the label. Keep a timestamped label-rollback script written before you need it.
-  - name: Trace every generation and link it to the prompt version
-    text: One trace per call carrying user and session ids and input; one generation object per model call linked to the fetched prompt version, so prompt-version A/B comparison is possible.
-  - name: Score with stable names, pushed fail-safe
-    text: Define a small vocabulary of score names and never rename them. Wrap score pushes so a telemetry error can never reach the user path.
-  - name: Layer the evals — deterministic first, judge second, grounding third
-    text: A sub-10ms deterministic detector on 100% of output, an async observe-only LLM-judge rubric that never gates delivery, and a grounding judge where facts matter that flags contradictions and invented specifics.
-  - name: Tier models per surface, with fallback chains
-    text: Frontier model for the flagship surface (off the critical path if you can pre-generate), a cheap tier elsewhere with a mid tier as fallback, judges on the cheap tier. Keep the system prompt universal for provider-side prompt caching.
-  - name: Close the loop with datasets from live traces
-    text: Pull recent traces (optionally filtered to failures) into a dataset. Test any prompt change against real inputs before its version gets the production label.
+  - name: "Make the prompt service the source of truth, and the repo the fallback"
+    text: "Every prompt lives in the service under a {{feature-name}} key with a production label. A copy of each prompt template stays in code — but it is a cold-start fallback, nothing more. The decision that matters: runtime fetches by label, humans promote by label, and the disk copy is NEVER auto-pushed. Editing the file in the repo must not change production."
+  - name: "Build one prompt assembler with a fail-open chain"
+    text: "All generation goes through a single function: try the managed prompt → compile {{variables}} into it → on any failure fall back to the in-code template → worst case return something usable. The contract is that the user-facing request never fails because the prompt service is down. Telemetry degrades; delivery doesn't."
+  - name: "Cache short, keep last-good forever"
+    text: "In-memory cache with a short TTL (ours: 10 seconds — promote in the UI, live within seconds) plus an indefinitely-held last-good version as the stale fallback. If you run a process cluster, broadcast invalidation cheaply (we touch a file and stat its mtime per request — no IPC needed)."
+  - name: "Seed inert, promote by hand"
+    text: "Your prompt-seeding script's DEFAULT behavior creates new versions under a seed-candidate label — never production. Going live requires an explicit flag AND a human promoting the label in the service's UI. Your highest-value live prompt should be skipped by the seeder entirely unless force-flagged. This step is written in scar tissue (see failure modes). Keep a rollback script that can restore pre-regression labels by timestamp."
+  - name: "Trace every generation and link it to the prompt version"
+    text: "One trace per call, carrying user/session ids, the audience/surface, and input. One generation object per model call, LINKED to the fetched prompt object — that link is what makes \"which prompt version produced this\" a column you can filter, and prompt-version A/B comparison possible at all."
+  - name: "Score with stable names, pushed fail-safe"
+    text: "Define a small vocabulary of score names ({{e.g. quality-pass (0|1), quality-findings (int), grounding-pass (0|1), user-feedback (-1|0|1)}}) and never rename them — dashboards and queries depend on stability. Score pushes are wrapped so a telemetry error can never reach the user path."
+  - name: "Layer the evals — deterministic first, judge second, grounding third"
+    text: "- Deterministic detector (always, inline, <10ms). Regex/string rules encoding your named anti-patterns: hard rules (one hit = fail, and mechanically auto-repairable ones get repaired in-memory) and soft rules (vocabulary tics that only fail on accumulation). This is your written quality bar as code — it runs on 100% of output and costs nothing. {{YOUR_ANTI_PATTERNS — ours encode 15+ named patterns; yours will differ}} - LLM-judge rubric (always, async, observe-only). A cheap model scores each output against {{N}} yes/no gates from your written rubric — fired AFTER the response is sent, never gating delivery, failing open if the judge errors. Its job is to make quality a filterable score in your traces, not to block anything. - Grounding judge (where facts matter, T≈0.1). Pass the verified facts plus the generated text to a cheap model asked one question: does the text contradict or invent? Bias it to pass — flag clear contradictions and invented specifics, allow paraphrase and poetic elaboration. Pair it with the source-asserts rule: the model may only phrase what your data layer asserts; strip or silence anything unsourced."
+  - name: "Tier models per surface, with fallback chains"
+    text: "Flagship surface gets the frontier model (off the critical path if you can pre-generate); everything else gets the cheap tier with the mid tier as robustness fallback; judges run on the cheap tier. Mark the system prompt for provider-side prompt caching and keep it universal (no per-user/per-place details in it) so the cache key holds across callers."
+  - name: "Close the loop with datasets from live traces"
+    text: "A script that pulls the last N traces (optionally filtered to failures via your pass/fail score) into a dataset in the service. That dataset is how a prompt change is tested against real inputs BEFORE its version gets the production label. Promotion without a dataset run is how regressions ship."
 ---
 
 <p className="-mt-2 text-fd-muted-foreground">
@@ -47,20 +47,20 @@ steps:
 ## The problem
 
 You built a feature where an AI model writes something for your users — chat
-replies, summaries, product descriptions, support answers. It worked in the demo.
-Then in production: you tweak the prompt to fix one thing and quietly break
-another, and nobody notices for days. The model starts making things up. The
-morning the AI provider has a hiccup, your whole feature goes dark. And when you
-do change the prompt, you can't actually prove the new version is better than the
-old one — you just hope.
+replies, summaries, product descriptions, support answers. It worked in the
+demo. Then in production: you tweak the prompt to fix one thing and quietly
+break another, and nobody notices for days. The model starts making things up.
+The morning the AI provider has a hiccup, your whole feature goes dark. And
+when you do change the prompt, you can't actually prove the new version is
+better than the old one — you just hope.
 
 ## What you get
 
 A way to run that AI feature so none of the above happens:
 
-- **Change the prompt without a code deploy** — and without silently breaking it,
-  because prompts live in one managed place with versions and one-click rollback,
-  not buried in your code.
+- **Change the prompt without a code deploy** — and without silently breaking
+  it, because prompts live in one managed place with versions and one-click
+  rollback, not buried in your code.
 - **Every single output gets quality-checked automatically** — cheaply, in the
   background, so you catch the feature getting worse before your users do.
 - **The feature never hard-fails.** When the model or the provider blips, it
@@ -74,19 +74,19 @@ A way to run that AI feature so none of the above happens:
 iterate on the prompt more than once a month. The whole apparatus exists so
 prompt iteration is safe and measurable.
 
-**Skip when** the LLM output is internal-only, one-off, or human-reviewed before
-anyone sees it (an authoring tool with a human gate needs only steps 1–3 and 7;
-the runtime protections are overkill). Skip the judge layers when you have no
-quality bar written down yet — write the bar first.
+**Skip when** the LLM output is internal-only, one-off, or human-reviewed
+before anyone sees it (an authoring tool with a human gate needs only steps
+1–3 and 7; the runtime protections are overkill). Skip the judge layers when
+you have no quality bar written down yet — write the bar first.
 
 ## Ingredients
 
 - A prompt-management/observability service with versioned prompts, labels,
-  traces, and scores (we use Langfuse Cloud; self-host works). BYO account — and
-  if your project has an isolation boundary (grant, clean-room, client), the
-  account belongs to THAT entity, not yours.
-- An LLM provider with at least two model tiers (a frontier model for the flagship
-  surface, a cheap fast model for judges and low-stakes surfaces).
+  traces, and scores (we use Langfuse Cloud; self-host works). BYO account —
+  and if your project has an isolation boundary (grant, clean-room, client),
+  the account belongs to THAT entity, not yours.
+- An LLM provider with at least two model tiers (a frontier model for the
+  flagship surface, a cheap fast model for judges and low-stakes surfaces).
 - Env: two API keys for the prompt service, one for the provider. Nothing else.
 - Expected running cost: judge overhead ~$0.002 per generation; see receipts.
 
@@ -95,77 +95,78 @@ quality bar written down yet — write the bar first.
 **1. Make the prompt service the source of truth, and the repo the fallback.**
 Every prompt lives in the service under a `{{feature-name}}` key with a
 `production` label. A copy of each prompt template stays in code — but it is a
-cold-start fallback, nothing more. The decision that matters: runtime fetches by
-label, humans promote by label, and the disk copy is NEVER auto-pushed. Editing
-the file in the repo must not change production.
+cold-start fallback, nothing more. The decision that matters: runtime fetches
+by label, humans promote by label, and the disk copy is NEVER auto-pushed.
+Editing the file in the repo must not change production.
 
 **2. Build one prompt assembler with a fail-open chain.** All generation goes
-through a single function: try the managed prompt → compile `{{variables}}` into
-it → on any failure fall back to the in-code template → worst case return
+through a single function: try the managed prompt → compile `{{variables}}`
+into it → on any failure fall back to the in-code template → worst case return
 something usable. The contract is that the user-facing request never fails
 because the prompt service is down. Telemetry degrades; delivery doesn't.
 
 **3. Cache short, keep last-good forever.** In-memory cache with a short TTL
 (ours: 10 seconds — promote in the UI, live within seconds) plus an
-indefinitely-held last-good version as the stale fallback. If you run a process
-cluster, broadcast invalidation cheaply (we touch a file and stat its mtime per
-request — no IPC needed).
+indefinitely-held last-good version as the stale fallback. If you run a
+process cluster, broadcast invalidation cheaply (we touch a file and stat its
+mtime per request — no IPC needed).
 
-**4. Seed inert, promote by hand.** Your prompt-seeding script's DEFAULT behavior
-creates new versions under a `seed-candidate` label — never `production`. Going
-live requires an explicit flag AND a human promoting the label in the service's
-UI. Your highest-value live prompt should be skipped by the seeder entirely unless
-force-flagged. This step is written in scar tissue (see failure modes). Keep a
-rollback script that can restore pre-regression labels by timestamp.
+**4. Seed inert, promote by hand.** Your prompt-seeding script's DEFAULT
+behavior creates new versions under a `seed-candidate` label — never
+`production`. Going live requires an explicit flag AND a human promoting the
+label in the service's UI. Your highest-value live prompt should be skipped by
+the seeder entirely unless force-flagged. This step is written in scar tissue
+(see failure modes). Keep a rollback script that can restore pre-regression
+labels by timestamp.
 
 **5. Trace every generation and link it to the prompt version.** One trace per
-call, carrying user/session ids, the audience/surface, and input. One generation
-object per model call, LINKED to the fetched prompt object — that link is what
-makes "which prompt version produced this" a column you can filter, and
-prompt-version A/B comparison possible at all.
+call, carrying user/session ids, the audience/surface, and input. One
+generation object per model call, LINKED to the fetched prompt object — that
+link is what makes "which prompt version produced this" a column you can
+filter, and prompt-version A/B comparison possible at all.
 
 **6. Score with stable names, pushed fail-safe.** Define a small vocabulary of
-score names (`{{e.g. quality-pass (0|1), quality-findings (int), grounding-pass
-(0|1), user-feedback (-1|0|1)}}`) and never rename them — dashboards and queries
-depend on stability. Score pushes are wrapped so a telemetry error can never
-reach the user path.
+score names (\{\{e.g. quality-pass (0|1), quality-findings (int),
+grounding-pass (0|1), user-feedback (-1|0|1)\}\}) and never rename them —
+dashboards and queries depend on stability. Score pushes are wrapped so a
+telemetry error can never reach the user path.
 
 **7. Layer the evals — deterministic first, judge second, grounding third:**
+   - **Deterministic detector (always, inline, &lt;10ms).** Regex/string rules
+     encoding your named anti-patterns: hard rules (one hit = fail, and
+     mechanically auto-repairable ones get repaired in-memory) and soft rules
+     (vocabulary tics that only fail on accumulation). This is your written
+     quality bar as code — it runs on 100% of output and costs nothing.
+     \{\{YOUR_ANTI_PATTERNS — ours encode 15+ named patterns; yours will differ\}\}
+   - **LLM-judge rubric (always, async, observe-only).** A cheap model scores
+     each output against \{\{N\}\} yes/no gates from your written rubric — fired
+     AFTER the response is sent, never gating delivery, failing open if the
+     judge errors. Its job is to make quality a filterable score in your
+     traces, not to block anything.
+   - **Grounding judge (where facts matter, T≈0.1).** Pass the verified facts
+     plus the generated text to a cheap model asked one question: does the
+     text contradict or invent? Bias it to pass — flag clear contradictions
+     and invented specifics, allow paraphrase and poetic elaboration. Pair it
+     with the source-asserts rule: the model may only phrase what your data
+     layer asserts; strip or silence anything unsourced.
 
-- **Deterministic detector (always, inline, &lt;10ms).** Regex/string rules
-  encoding your named anti-patterns: hard rules (one hit = fail, and mechanically
-  auto-repairable ones get repaired in-memory) and soft rules (vocabulary tics
-  that only fail on accumulation). This is your written quality bar as code — it
-  runs on 100% of output and costs nothing.
-  `{{YOUR_ANTI_PATTERNS — ours encode 15+ named patterns; yours will differ}}`
-- **LLM-judge rubric (always, async, observe-only).** A cheap model scores each
-  output against `{{N}}` yes/no gates from your written rubric — fired AFTER the
-  response is sent, never gating delivery, failing open if the judge errors. Its
-  job is to make quality a filterable score in your traces, not to block anything.
-- **Grounding judge (where facts matter, T≈0.1).** Pass the verified facts plus
-  the generated text to a cheap model asked one question: does the text contradict
-  or invent? Bias it to pass — flag clear contradictions and invented specifics,
-  allow paraphrase and poetic elaboration. Pair it with the source-asserts rule:
-  the model may only phrase what your data layer asserts; strip or silence
-  anything unsourced.
+**8. Tier models per surface, with fallback chains.** Flagship surface gets
+the frontier model (off the critical path if you can pre-generate); everything
+else gets the cheap tier with the mid tier as robustness fallback; judges run
+on the cheap tier. Mark the system prompt for provider-side prompt caching and
+keep it universal (no per-user/per-place details in it) so the cache key holds
+across callers.
 
-**8. Tier models per surface, with fallback chains.** Flagship surface gets the
-frontier model (off the critical path if you can pre-generate); everything else
-gets the cheap tier with the mid tier as robustness fallback; judges run on the
-cheap tier. Mark the system prompt for provider-side prompt caching and keep it
-universal (no per-user/per-place details in it) so the cache key holds across
-callers.
-
-**9. Close the loop with datasets from live traces.** A script that pulls the last
-N traces (optionally filtered to failures via your pass/fail score) into a dataset
-in the service. That dataset is how a prompt change is tested against real inputs
-BEFORE its version gets the production label. Promotion without a dataset run is
-how regressions ship.
+**9. Close the loop with datasets from live traces.** A script that pulls the
+last N traces (optionally filtered to failures via your pass/fail score) into
+a dataset in the service. That dataset is how a prompt change is tested
+against real inputs BEFORE its version gets the production label. Promotion
+without a dataset run is how regressions ship.
 
 ## The receipts
 
 All numbers from origin production (a consumer content pipeline running this
-recipe live, multiple surfaces, as of mid-2026). Full citations live in the
+recipe live, multiple surfaces, as of mid-2026). Full citations in the
 internal evidence file — not published.
 
 | Claim | Number |
@@ -177,31 +178,32 @@ internal evidence file — not published.
 | Deterministic detector | &lt;10ms, runs inline on everything |
 | LLM-rewrite-on-failure | tried, measured, DISABLED — 8–12s + ~$0.02 per miss and empirically no better than mechanical auto-repair plus a recency feed |
 
-That last row is a receipt most libraries would hide: the fancy self-repair loop
-lost to a regex and a memory feed. Kept so you don't build it first.
+That last row is a receipt most libraries would hide: the fancy self-repair
+loop lost to a regex and a memory feed. Kept so you don't build it first.
 
 ## What might go wrong
 
-- **Your seed script regresses production.** Bites when anything automated can
-  write the production label — the classic trigger is a stale checkout whose
-  on-disk prompts silently re-seed over a newer live version. Symptom: quality
-  drops with no code deploy in sight, so nobody looks at prompts. Prevention is
-  step 4's whole design: inert-by-default seeding, the flagship prompt excluded
-  unless force-flagged, promotion as a separate human act, a label-rollback script
-  written BEFORE you need it. If your seeder can touch production without a flag,
-  this incident is scheduled, not hypothetical.
+- **Your seed script regresses production.** Bites when anything automated
+  can write the production label — the classic trigger is a stale checkout
+  whose on-disk prompts silently re-seed over a newer live version. Symptom:
+  quality drops with no code deploy in sight, so nobody looks at prompts.
+  Prevention is step 4's whole design: inert-by-default seeding, the flagship
+  prompt excluded unless force-flagged, promotion as a separate human act, a
+  label-rollback script written BEFORE you need it. If your seeder can touch
+  production without a flag, this incident is scheduled, not hypothetical.
 - **Structured output truncates ugly.** Bites when a tight max_tokens meets
-  schema/tool-call mode: cutoff yields unparseable JSON and a hard failure, where
-  free-text cutoff would have degraded into something still usable. Choose output
-  mode per surface with cutoff behavior in mind, not just parsing convenience.
-- **A judge becomes an outage.** Bites when any eval layer gates delivery: its
-  latency, cost, and error rate are now on your user path. Every layer in this
-  recipe is observe-only or fail-open by design; the origin system's one gating
-  layer was measured and disabled (see receipts).
-- **The fallback rots.** Bites months in: the in-code fallback prompt drifts ever
-  further behind the managed one, and the day the prompt service blips, users get
-  last year's voice. The pulse section's periodic fallback check exists for
-  exactly this.
+  schema/tool-call mode: cutoff yields unparseable JSON and a hard failure,
+  where free-text cutoff would have degraded into something still usable.
+  Choose output mode per surface with cutoff behavior in mind, not just
+  parsing convenience.
+- **A judge becomes an outage.** Bites when any eval layer gates delivery:
+  its latency, cost, and error rate are now on your user path. Every layer in
+  this recipe is observe-only or fail-open by design; the origin system's one
+  gating layer was measured and disabled (see receipts).
+- **The fallback rots.** Bites months in: the in-code fallback prompt drifts
+  ever further behind the managed one, and the day the prompt service blips,
+  users get last year's voice. The pulse section's periodic fallback check
+  exists for exactly this.
 
 ## The pulse
 
@@ -211,23 +213,21 @@ What keeps this alive after you build it — non-negotiable:
   agent) reads the score dashboard weekly and owns "did we regress."
 - Prompt promotion ritual: dataset run → compare scores → promote label. No
   promotion outside the ritual.
-- The disk fallbacks drift stale by design (source of truth is the service); a
-  periodic check that the fallback still produces acceptable output is part of the
-  eval cadence, or your outage story quietly rots.
+- The disk fallbacks drift stale by design (source of truth is the service);
+  a periodic check that the fallback still produces acceptable output is part
+  of the eval cadence, or your outage story quietly rots.
 - Score names are frozen; adding is fine, renaming is a migration.
 
 ## The skill
 
-The installable skill and its reference code, in full — copy any file, or grab
-the whole bundle above. This is what an agent follows to build the prompt-ops
-apparatus in your codebase.
+The installable skill and its reference code, in full — copy any file, or grab the whole bundle above. This is what an agent follows to build the pattern in your codebase.
 
-<SkillFiles slug="llm-prompt-ops" />
+&lt;SkillFiles slug="llm-prompt-ops" />
 
 ## Provenance
 
-Abstracted mid-2026 from a live consumer content-generation pipeline running every
-pattern here in production across multiple surfaces. Patterns only — no source
-code crosses this document, and origin-identifying details live in the internal
-evidence file beside it. The origin system remains live; this recipe supersedes
-nothing.
+Abstracted mid-2026 from a live consumer content-generation pipeline running
+every pattern here in production across multiple surfaces. Patterns only — no
+source code crosses this document, and origin-identifying details live in the
+internal evidence file beside it. The origin system remains live; this recipe
+supersedes nothing.

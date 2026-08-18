@@ -22,11 +22,33 @@ Seed: agentrecipes (office #199 / #185). Owner: seed-keeper. Web build: mason.
 
 ## Content
 
-Recipes live as MDX in `content/docs/`. Add a recipe by dropping a `<slug>.mdx`
-with `title` + `description` frontmatter and linking it from the catalog
-(`content/docs/index.mdx`) and `meta.json`. Use
-`<MaturityBadge level="draft|internal|field-tested|proven" />` for the maturity
-signal.
+Recipes are single-sourced from the private `wyldway-office` repo
+(office#202) — `scripts/sync-recipes.mjs` reads every
+`../wyldway-office/recipes/<slug>/RECIPE.md` and GENERATES this site's
+`content/docs/<slug>.mdx`, `content/docs/meta.json` (sidebar order), and
+`content/docs/index.mdx` (catalog cards, grouped by category). Nobody
+hand-writes recipe `.mdx` here anymore.
+
+**To add a recipe:** write `RECIPE.md` in the office repo (see
+`wyldway-office/recipes/FORMAT.md`), optionally add the six "site
+presentation" frontmatter fields it documents (`category`, `icon`,
+`system_short`, `description`, `origin_short`, `maturity_note` — all
+optional, all have sane defaults), then run `npm run sync:recipes` (or just
+`npm run build` / `npm run dev` — it's wired into `prebuild`/`predev`). The
+site page, sidebar entry, and catalog card all appear with no further
+hand-editing.
+
+**Sibling-repo contract:** `wyldway-office` is private and not present in the
+Vercel build environment. `sync-recipes.mjs` no-ops when it can't find the
+office repo (checks `../wyldway-office`, override with `WYLDWAY_OFFICE_DIR`)
+and the build then uses whatever `content/docs/*.mdx` is already committed —
+so a maintainer regenerates and commits locally, and Vercel just builds the
+committed output. Same pattern `scripts/sync-skills.mjs` already used for the
+downloadable skill bundles.
+
+Use `<MaturityBadge level="draft|internal|field-tested|proven" />` for the
+maturity signal (set automatically by the generator from `RECIPE.md`'s
+`maturity` field).
 
 ## Develop
 

@@ -17,15 +17,38 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const siteRoot = join(__dirname, '..');
-// The office recipes live in a sibling repo of the site.
-const officeRecipes = join(siteRoot, '..', 'wyldway-office', 'recipes');
+// The office recipes live in a sibling repo of the site. WYLDWAY_OFFICE_DIR
+// overrides the sibling-path assumption (same env var sync-recipes.mjs uses)
+// for CI/sandboxes where the two repos aren't literal filesystem siblings.
+const officeRoot = process.env.WYLDWAY_OFFICE_DIR || join(siteRoot, '..', 'wyldway-office');
+const officeRecipes = join(officeRoot, 'recipes');
 
-const SLUGS = [
-  'llm-prompt-ops',
-  'grounded-generation',
-  'shared-agent-memory',
-  'agent-worker-fleet',
-];
+// Auto-discover every recipe dir (anything under recipes/ that has a
+// RECIPE.md) instead of a hand-maintained list — a hardcoded SLUGS list here
+// was the same class of bug office#202 was filed over: growth-loop-mechanics
+// and voice-ai-pipeline existed in the office but were never added to this
+// list, so their skill bundles silently never shipped to the site.
+function discoverSlugs() {
+  let entries;
+  try {
+    entries = readdirSync(officeRecipes, { withFileTypes: true });
+  } catch {
+    return [];
+  }
+  return entries
+    .filter((e) => e.isDirectory())
+    .map((e) => e.name)
+    .filter((slug) => {
+      try {
+        return statSync(join(officeRecipes, slug, 'RECIPE.md')).isFile();
+      } catch {
+        return false;
+      }
+    })
+    .sort();
+}
+
+const SLUGS = discoverSlugs();
 
 // A file is internal (never published) if its name matches these.
 const isInternal = (name) =>

@@ -1,4 +1,15 @@
 {
   "title": "Recipes",
-  "pages": ["index", "---Recipes---", "llm-prompt-ops", "grounded-generation", "shared-agent-memory", "agent-worker-fleet", "---Reference---", "format"]
+  "pages": [
+    "index",
+    "---Recipes---",
+    "grounded-generation",
+    "llm-prompt-ops",
+    "voice-ai-pipeline",
+    "shared-agent-memory",
+    "agent-worker-fleet",
+    "growth-loop-mechanics",
+    "---Reference---",
+    "format"
+  ]
 }
