@@ -32,20 +32,48 @@ function fixture() {
   writeFileSync(join(root, 'lib/skill-manifest.json'), '{}');
   return root;
 }
-test('works without an office repo and keeps standalone/community pages', () => {
+test('is validation-only and keeps standalone/community pages', () => {
   const root = fixture();
   try {
     const page = join(root, 'content/docs/community.mdx');
-    writeFileSync(page, escaped);
+    writeFileSync(page, '<SkillFiles slug="example-guide" />');
     prepareLibrary(root);
     assert.equal(readFileSync(page, 'utf8'), '<SkillFiles slug="example-guide" />');
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
-test('refuses public symlinks', () => {
+test('requires escaped SkillFiles repairs to be committed', () => {
+  const root = fixture();
+  try {
+    writeFileSync(join(root, 'content/docs/community.mdx'), escaped);
+    assert.throws(() => prepareLibrary(root), /must be repaired and committed/);
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+test('refuses public symlinks and symlink validation roots', () => {
   const root = fixture();
   try {
     symlinkSync(join(root, 'lib'), join(root, 'public/skills/linked'));
     assert.throws(() => prepareLibrary(root), /symlinks/);
+  } finally { rmSync(root, { recursive: true, force: true }); }
+
+  const root2 = mkdtempSync(join(tmpdir(), 'public-library-root-link-'));
+  const external = mkdtempSync(join(tmpdir(), 'public-library-external-'));
+  try {
+    mkdirSync(join(root2, 'content'), { recursive: true });
+    mkdirSync(join(root2, 'public/skills'), { recursive: true });
+    mkdirSync(join(root2, 'lib'), { recursive: true });
+    writeFileSync(join(root2, 'lib/skill-manifest.json'), '{}');
+    symlinkSync(external, join(root2, 'content/docs'));
+    assert.throws(() => prepareLibrary(root2), /validation roots cannot be symlinks/i);
+  } finally {
+    rmSync(root2, { recursive: true, force: true });
+    rmSync(external, { recursive: true, force: true });
+  }
+});
+test('scans the entire statically served public tree', () => {
+  const root = fixture();
+  try {
+    writeFileSync(join(root, 'public/RECEIPTS-internal.md'), 'unsafe');
+    assert.throws(() => prepareLibrary(root), /unsafe path/i);
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 test('refuses manifest text drift and missing archives', () => {
@@ -53,10 +81,14 @@ test('refuses manifest text drift and missing archives', () => {
   try {
     mkdirSync(join(root, 'public/skills/example-guide'));
     writeFileSync(join(root, 'public/skills/example-guide/SKILL.md'), 'actual');
-    const entry = { zip: '/skills/example-guide.zip', files: [{ path: 'SKILL.md', url: '/skills/example-guide/SKILL.md', text: 'wrong' }] };
+    const entry = { zip: '/skills/example-guide.zip', files: [{ path: 'SKILL.md', url: '/skills/example-guide/SKILL.md', text: 'wrong', bytes: 6 }] };
     writeFileSync(join(root, 'lib/skill-manifest.json'), JSON.stringify({ 'example-guide': entry }));
     assert.throws(() => prepareLibrary(root), /drift/);
     entry.files[0].text = 'actual';
+    entry.files[0].bytes = 999;
+    writeFileSync(join(root, 'lib/skill-manifest.json'), JSON.stringify({ 'example-guide': entry }));
+    assert.throws(() => prepareLibrary(root), /drift/);
+    entry.files[0].bytes = Buffer.byteLength('actual', 'utf8');
     writeFileSync(join(root, 'lib/skill-manifest.json'), JSON.stringify({ 'example-guide': entry }));
     assert.throws(() => prepareLibrary(root), /archive/);
   } finally { rmSync(root, { recursive: true, force: true }); }
