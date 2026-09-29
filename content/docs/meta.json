@@ -1,15 +1,18 @@
 {
-  "title": "Recipes",
+  "title": "Agent Recipes",
   "pages": [
     "index",
-    "---Recipes---",
-    "grounded-generation",
+    "service-to-mcp",
+    "cross-agent-handoff",
+    "scoped-autonomous-operations",
+    "pointmoon-grounding",
+    "ai-native-admin",
     "llm-prompt-ops",
+    "grounded-generation",
     "voice-ai-pipeline",
     "shared-agent-memory",
     "agent-worker-fleet",
     "growth-loop-mechanics",
-    "---Reference---",
     "format"
   ]
 }

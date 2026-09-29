@@ -1,111 +1,50 @@
 ---
-title: The recipe format
-description: What a recipe is, its required sections, the maturity lifecycle, and the receipts discipline.
-icon: FileText
+title: How to use these recipes
+description: Start with one useful job. Inspect the implementation, test the failure cases and understand what the evidence does not establish.
+icon: BookOpen
 ---
 
-> A recipe is a plug-and-play artifact someone else can implement fresh in their
-> own stack — abstracted knowledge, never our code. Written for three readers at
-> once: a maintainer, a DIY builder, and an open-source contributor.
+## A recipe is a starting point, not a guarantee
 
-## What a recipe IS
+These guides help a builder understand and implement a particular pattern. Some have evidence from an original product; others are drafts with small reference examples. Do not treat a badge as a security review or assume that an example has been tested in your stack.
 
-One proven system, abstracted to its container: the decisions, the steps, the
-config shapes, the guardrails — with the content slots left open. The reader
-implements it in their own codebase in hours-to-days, without ever seeing ours.
-The clean-room test is the bar: if a team that is legally forbidden from copying
-our code can implement the recipe, it's a recipe. If they'd need our source, it's
-documentation, not a recipe.
+A useful guide answers: what will this help someone do, what must already exist, which steps matter, how can the result be checked, and when should the pattern not be used?
 
-## What makes ours different: receipts
+## Read the status first
 
-Every recipe carries an evidence ledger — real production numbers, real failure
-modes, real costs, each claim cited or marked ESTIMATE. A recipe without receipts
-is a <MaturityBadge level="draft" /> and is labeled so. This is the
-claims-inflation discipline turned into the product's moat: the internet is full
-of untested prompt libraries; nobody ships the receipts.
+| Status | What it means |
+|---|---|
+| Draft | Implementation, evidence or integration testing is incomplete. Read the stated limits. |
+| Internal | Evidence is reported from the original implementation. Independent reproduction is not established. |
+| Field-tested | Another person has implemented the recipe and recorded the result. |
+| Proven | Evidence exists from at least two independent implementations. It still does not guarantee your result. |
 
-## Anatomy (required sections, in order)
+A chosen timeout or threshold is a configuration decision, not a measured outcome. A smoke test is not a production percentile. An offline helper test is not an MCP host test. Look for the date, versions, conditions, sample size and failure cases behind a claim.
 
-Every recipe opens with frontmatter:
+## The three layers
 
-```yaml
----
-name: <human title>
-slug: <kebab-case>
-version: 0.1
-maturity: draft | internal | field-tested | proven   # see Lifecycle below
-origin: <the system this was abstracted from>
-consumers: [<who has implemented it, incl. us>]
-license: <CC-BY-SA-4.0 default when published; internal until then>
----
-```
+**The guide** explains the task, boundaries, decisions and tests.
 
-1. **The problem** — one short paragraph, in the reader's own words, of the pain
-   they're living. No jargon. This is what they'd type into a search box. If a
-   developer who has never heard our vocabulary can't recognize their own
-   situation here, the recipe fails before it starts.
-2. **What you get** — the outcome in the reader's terms, as plain-language
-   promises that answer the problem point-for-point. Translate every insider term
-   ("layered evals" becomes "every output gets quality-checked automatically";
-   "fail-open" becomes "never hard-fails when the provider blips").
-3. **Use when / skip when** — honest fit filter, including who this is NOT for.
-4. **Ingredients** — services, models, accounts, and expected costs. BYO
-   everything; a recipe never requires our infrastructure.
-5. **The recipe** — numbered steps. Each step names the decision being made and
-   why, then the move. Config/schema shapes and pseudocode allowed; our source
-   code never. `{{SLOTS}}` mark where the reader's content goes.
-6. **The receipts** — the evidence ledger: real production numbers, cost ranges
-   (quote the range, never the floor), what n the evidence is from. In the recipe
-   body, numbers are attributed only to "origin production" — the detailed
-   citations live in the internal evidence file (see Rules).
-7. **What might go wrong** — failure modes abstracted from real incidents: the
-   conditions under which each one bites, the symptom, and the move that prevents
-   it. Every recipe includes at least one lesson learned the hard way — written
-   so the reader recognizes their own risk, not our history.
-8. **The pulse** — who or what keeps this alive after implementation: eval
-   cadence, staleness checks, drift alarms. A system with no pulse dies quietly;
-   a recipe that omits the pulse sells a stall.
-9. **Provenance** — where the pattern came from, what it superseded, license.
+**SKILL.md** gives a coding agent scoped instructions to adapt the pattern. It does not grant access, authorize a deploy or start an unattended process merely by being installed.
 
-## Rules
+**Reference code** makes a specific part inspectable. A fixture or pure function may intentionally omit a database, authentication, scheduling or host UI. Those omissions should be explicit. Inspect the code before running it, use a synthetic environment first, and keep credentials out of prompts and logs.
 
-- **The outsider test — the name IS the use case.** The recipe's name is a plain
-  headline naming the reader's job or pain, phrased the way they'd search for it —
-  not the system's insider label. The insider term goes in `system_name` and
-  shows only as a subtitle/slug. "LLM prompt ops" is a slug; "Keep an AI feature
-  reliable in production while you keep changing the prompt" is the name. Test:
-  read only the name and the problem paragraph aloud to someone who doesn't know
-  the jargon — if they can't say what it's for and whether it's for them, rewrite
-  before anything else. This test is also the SEO: people search their problem, so
-  the use-case name is the keyword.
-- **Container, not content.** Templatize the fixed shapes; leave the client's
-  content as slots. Pre-filled content anchors wrong.
-- **Receipts or the draft label.** No production evidence →
-  <MaturityBadge level="draft" />, visibly. Contributors are held to the same
-  bar.
-- **Abstraction is the legal boundary.** Recipes carry patterns and shapes, never
-  code lifted from a proprietary repo. This is what lets an AGPL or clean-room
-  project consume a recipe safely.
-- **The pulse section is mandatory.** Non-negotiable, learned the hard way.
-- **Abstract the scar, keep the lesson.** The recipe body never carries
-  origin-identifying details — no internal ticket ids, incident names, version
-  numbers, file paths, or dates. Failure modes read as "what might go wrong when
-  X" — the generalized condition, not a war story. The full citations backing
-  every number and scar live in an internal evidence file beside the recipe,
-  which never publishes: it's how we hold the claims-inflation bar without
-  shipping our case files.
-- **One recipe, one system.** Compose recipes; don't write omnibuses.
-- **Public by default.** A recipe is publishable unless flagged closed. Openness
-  IS the strategy — the library only compounds if recipes flow to it.
+Some existing guides have ZIP bundles. The new draft guides link directly to their public instructions and reference files while packaging and host verification are completed. There is no claim that an untested install command works.
 
-## Lifecycle
+## A practical first run
 
-<MaturityBadge level="draft" showHint /><br />
-<MaturityBadge level="internal" showHint /><br />
-<MaturityBadge level="field-tested" showHint /><br />
-<MaturityBadge level="proven" showHint />
+Pick one recipe that matches an actual task. Try its smallest example. Break it deliberately with a missing input, denied permission, stale data or interrupted run. Then adapt only the relevant part to your service and repeat those checks there.
 
-Maturity is the honesty signal, not a permission gate. A draft or internal recipe
-may still publish — labeled as such — so long as the label tells the truth about
-how much evidence stands behind it.
+Keep consequential writes behind your service's real permissions and approval rules. Limit run time, spend and retries. Record the artifact produced, what passed, what failed and what is still unverified.
+
+## Public patterns, not private playbooks
+
+The library shares individually useful patterns and independently written examples. It is not a dump of an organization's private prompts, operating rules or customer data. Everything committed to its public repository is public, even on a draft branch or if excluded from the website. Noindex is not access control.
+
+Check the applicable file-specific licence before redistributing or incorporating material. A publicly visible file is not automatically a blanket permission to reuse every part of a repository; licence clarification remains part of this library's release review.
+
+## Keep the implementation healthy
+
+Every implemented recipe needs a way to detect regression: a contract test, source-freshness check, expected-output check or other measurable signal. Update the guide when that contract changes. Stop an automation that is producing activity rather than useful results.
+
+[Work with Naturate](https://www.naturate.io/contact?utm_source=agent-recipes&utm_medium=format) to adapt a pattern to a real product or workflow.

@@ -1,0 +1,58 @@
+---
+title: Make an existing service usable by AI agents
+description: Expose a small, useful part of your service through MCP. Start with two read-only tools, not a copy of your entire backend.
+icon: Plug
+recipe: true
+system: Service to MCP
+maturity: draft
+---
+
+<MaturityBadge level="draft" showHint />
+
+## The result
+
+A person asks an assistant to find an item in your service. The assistant lists relevant items, reads the selected one, and answers using the returned record. Your existing service still owns its data, permissions and business rules.
+
+The example is a synthetic exhibition catalog with two tools: `list_items` and `get_item`. It is deliberately small enough to inspect. This is not an export of Naturate's backend or operating playbook.
+
+## Use this when
+
+You have an existing service and a specific task an agent should perform through it. Skip MCP when an ordinary API client already does the job and no MCP host needs the integration. Do not begin by exposing every endpoint, SQL access or a generic command executor.
+
+## Try the example
+
+Download [catalog.mjs](/skills/service-to-mcp/reference/catalog.mjs) and [server.mjs](/skills/service-to-mcp/reference/server.mjs) into a new directory. The former is the service logic; the latter is the MCP adapter. In that directory:
+
+```sh
+npm init -y
+npm install @modelcontextprotocol/server zod
+node server.mjs
+```
+
+The server listens on stdio; silence on startup is expected. Connect it from a local MCP client using the absolute path to `server.mjs`. The adapter follows the current [official server quickstart](https://modelcontextprotocol.io/docs/develop/build-server). Record the installed package versions and retain the generated lockfile when testing. SDK installation and a real host walkthrough have not yet been verified for this guide.
+
+Ask: **“List the catalog items, then read the pond exhibition. Do not modify anything.”** The expected records are synthetic. `get_item` for `exhibit-999` returns `not_found`; a malformed ID is rejected.
+
+## Adapt the pattern
+
+**1. Name one user task.** “Read a published exhibition” is a useful scope. “Give agents our database” is not. Specify the allowed input, selected output fields, failure result and permission required for each operation.
+
+**2. Keep the adapter thin.** Replace the synthetic functions with calls to your existing service layer. Reuse its authorization and validation. The model never supplies its own identity or tenant authority.
+
+**3. Return enough information to finish the task.** Include stable IDs and small, structured results. Distinguish missing records, denied access and temporary failures without leaking the existence of another tenant's private records.
+
+**4. Separate reads from changes.** The sample cannot write. A later write tool should create a reviewable proposal first. It must not gain arbitrary backend capabilities because an assistant can request them.
+
+**5. Test the real client.** Validate tool discovery, selection, argument handling, result rendering and recovery. Local stdio, hosted MCP and an API model are different integration tests. MCP tool annotations describe behaviour; they are not authorization controls.
+
+## Before hosting it
+
+A remote production version needs authentication, tenant-scoped authorization, rate limits, timeouts, safe error handling and a log policy that excludes secrets. Treat returned record text as data, not instructions. Do not expose this local demonstration to the internet as an authenticated production service.
+
+OpenAI's [MCP integration guide](https://developers.openai.com/api/docs/guides/tools-connectors-mcp) and Anthropic's [MCP connector guide](https://platform.claude.com/docs/en/agents-and-tools/mcp-connector) describe their respective API integrations. Test and document each host separately.
+
+## Evidence and maintenance
+
+Offline tests cover the bounded catalog list, selected public fields, invalid IDs and missing records. They do not establish MCP transport compatibility or production security. Run the host smoke test after SDK or host changes, and repeat the permission tests when the real service is connected.
+
+[Agent implementation instructions](/skills/service-to-mcp/SKILL.md). No ZIP or one-command skill installation is claimed yet.

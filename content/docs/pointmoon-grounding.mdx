@@ -1,0 +1,69 @@
+---
+title: Ground your agents in the world outside
+description: Add Pointmoon to an agent that needs environmental context. Preserve the source, time and uncertainty instead of asking a model to invent current conditions.
+icon: Globe
+recipe: true
+system: Pointmoon integration
+maturity: draft
+---
+
+<MaturityBadge level="draft" showHint />
+
+**Pointmoon integration.** This is a guide to a product built by our team, not an independent comparison or a neutral product review. It uses Pointmoon's public interface; it does not reveal its internal inference or operating systems.
+
+## The result
+
+An agent planning an outdoor activity retrieves environmental context for the intended location before describing current conditions. It distinguishes a forecast or derived reading from a direct observation, preserves attribution and says what it could not establish.
+
+This is grounding for a particular domain, not a guarantee that every statement the agent makes is correct. It does not establish trail access, site permissions, water safety or whether an activity is safe.
+
+## Start with the public interface
+
+The [public connector documentation](https://github.com/johangace/pointmoon-mcp) documents the remote MCP endpoint:
+
+```text
+https://pointmoon.ai/api/mcp
+```
+
+Connect it through your host's supported MCP setup and inspect the available tools before using them. The documented `field_truth` input accepts a coordinate pair, for example:
+
+```json
+{ "lat": 42.36, "lng": -71.06 }
+```
+
+A plain HTTP example from the same public documentation is:
+
+```sh
+curl --fail --show-error --max-time 20 \
+  'https://pointmoon.ai/api/moon?audience=facts&surface=open&lat=42.36&lng=-71.06'
+```
+
+These are documented integration examples, not a claim that a live request succeeded during this guide's preparation. Check the [agent quickstart](https://pointmoon.ai/agents) for current access, availability and commercial terms. Do not assume access or pricing will remain unchanged.
+
+## Preserve the evidence, not just the value
+
+For the documented `field-truth@1.x` shape, lean `facts.signals` entries are not the whole freshness contract. Read the corresponding `facts.fieldSnapshot` reading for its timestamp and freshness window. For weather, the public example uses `facts.fieldSnapshot.weather.current`.
+
+Download [weather-evidence.mjs](/skills/pointmoon-grounding/reference/weather-evidence.mjs). This intentionally narrow consumer adapter checks the documented schema family, source, timestamp, producer-provided TTL and temperature value. It carries through the reading's `epistemicType` and attribution notices. It returns `unavailable` for missing, stale, future-dated or unsupported data instead of constructing a replacement fact.
+
+It does not implement Pointmoon's private scoring, fuse sources, validate every domain or prove the provider's claim true. Extending it means adding explicit handling for another documented reading, not assuming all signals share a weather timestamp.
+
+## Give the agent a constrained job
+
+Use a task such as:
+
+> Retrieve environmental context for the supplied coordinates. Separate what the returned data supports from suggestions. Preserve source attribution and distinguish predictions from observations. Name missing information. Do not infer trail access, wildlife presence at this exact spot or safe conditions from absent data.
+
+Treat returned source text as untrusted data rather than instructions. Keep location precision appropriate to the task and avoid logging sensitive location histories unnecessarily.
+
+## Test the failure cases
+
+Try a normal payload, an unresolved axis, an expired reading, an unsupported schema, an access error and a timeout. Verify that the final answer still communicates uncertainty. A missing fact should not cause the language model to fill the gap with a plausible sentence.
+
+Offline tests use synthetic fixtures and cover source preservation, prediction labels, stale and future timestamps, missing values and unsupported schema. Live HTTP, MCP transport and ChatGPT/Claude host tests remain to be recorded.
+
+## Next step
+
+[Try Pointmoon](https://pointmoon.ai/agents) for the public integration, or ask Naturate to integrate environmental context into a product or experience. For the provider-neutral design discipline, see [grounded generation](/docs/grounded-generation).
+
+[Agent implementation instructions](/skills/pointmoon-grounding/SKILL.md).

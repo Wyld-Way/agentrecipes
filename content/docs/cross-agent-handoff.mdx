@@ -1,0 +1,64 @@
+---
+title: Get Claude and ChatGPT working on the same task
+description: Let one assistant produce an artifact and another review it. Share the result and its evidence, not an endless conversation.
+icon: MessagesSquare
+recipe: true
+system: Cross-agent handoff
+maturity: draft
+---
+
+<MaturityBadge level="draft" showHint />
+
+## The result
+
+Claude drafts a document; ChatGPT checks it against the original brief and sources. Or reverse the roles. Both work on a clearly identified version, and you receive one draft plus a review instead of conflicting answers scattered across chats.
+
+This pattern applies beyond two named products. The useful unit is a **versioned artifact with an assigned next action**, not agents talking for its own sake.
+
+## Start without automation
+
+Give the producing assistant a brief and approved source material. Save its result as a document, file or issue you control. Open that same version in the reviewing assistant, together with the original brief. Request specific findings with evidence and a final `pass` or `changes_requested` verdict. You decide what to adopt.
+
+For a first trial, copy only the approved artifact and sources manually. This makes the permission boundary visible and tests whether the second review is worth its extra cost. Do not copy private conversation history or irrelevant internal instructions.
+
+## The handoff contract
+
+```json
+{
+  "taskId": "task-1",
+  "artifactId": "draft-1",
+  "version": 1,
+  "producer": "producer",
+  "reviewer": "reviewer",
+  "state": "awaiting_review",
+  "reviewBudget": 1
+}
+```
+
+The labels are example roles, not authenticated identities. A real shared service must derive the actor from its authenticated connection and enforce which role may make each transition.
+
+Download [handoff.mjs](/skills/cross-agent-handoff/reference/handoff.mjs). Its pure functions create a handoff, reject a review of the wrong version, consume one review, and stop at `awaiting_human`. They do not send messages or call models.
+
+## Add automation only after the handoff works
+
+**1. Put the artifact in a shared store.** Use an existing document system, repository or small service. Both assistants need explicit access to the same artifact, not your entire workspace.
+
+**2. Give the participants different jobs.** The producer creates. The reviewer checks requirements and evidence. A second model agreeing is not independent evidence that the content is true.
+
+**3. Preserve identity and version.** Every review names the exact artifact version. A stale review must not approve a later edit. Store transitions atomically so repeated delivery cannot consume the same job twice.
+
+**4. Choose who advances the workflow.** A person can drive the steps in the chat products. An unattended version needs an explicitly configured orchestrator using supported APIs or agent runtimes, with its own credentials and budget. Connecting both assistants to the same MCP server does not by itself make either assistant message or wake the other.
+
+**5. Stop deliberately.** The reference allows one review, then returns to a person whether the verdict passes or requests changes. A new revision is a new explicit handoff, not an automatic debate. Add a timeout, cancellation and spend limit before calling paid model APIs.
+
+## Test whether it helps
+
+Compare one-assistant and producer-plus-reviewer workflows on the same briefs. Record useful defects found, human corrections, time and actual cost. Keep the second review where it catches meaningful mistakes, not merely where it produces more prose.
+
+Test mismatched versions, an impersonated reviewer, duplicate callbacks, missing source access and a stalled participant. Never treat another assistant's output as trusted instructions to run tools or reveal data.
+
+## Evidence and limits
+
+Offline tests cover the transition functions and their stop conditions. No automatic Claude-to-ChatGPT transport, consumer-chat API, cost saving or cross-host execution is claimed. OpenAI's [MCP API guide](https://developers.openai.com/api/docs/guides/tools-connectors-mcp) and Anthropic's [tool-use guide](https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview) are integration references, not proof that this workflow has run.
+
+[Agent implementation instructions](/skills/cross-agent-handoff/SKILL.md).

@@ -1,84 +1,11 @@
 ---
-title: What are you building?
-description: Plug-and-play recipes for building proven AI and agent systems — each one a real system abstracted so you can implement it in your own stack.
+title: Choose a useful job for AI
+description: Practical implementation patterns and draft guides by Naturate. Start with a problem, then inspect the example and its limitations.
 icon: BookOpen
 ---
 
-Every recipe here is one proven system, abstracted to its container: the
-decisions, the steps, the config shapes, the guardrails — with the content slots
-left open. You implement it in your own codebase, in your own stack, without ever
-seeing ours.
+Use the library to connect an existing service, coordinate a small workflow, build an admin tool, or improve an AI feature you already run.
 
-What makes these different is **receipts**: real production numbers, real failure
-modes, real costs behind every claim. A recipe without receipts is labeled a
-draft. Most guides ship the pattern and hide the evidence — these ship both.
+Each guide should explain the result, the implementation and the failure cases. **Internal** means evidence from its original implementation, not independent validation. **Draft** means the guide still needs implementation or host testing. Read the evidence section before treating a pattern as proven.
 
-Pick the job you're trying to do.
-
-## Running LLMs in production
-
-You have an LLM writing something users see, and you need it to be safe to change and measurable — not a black box that regresses silently.
-
-<Cards>
-  <Card
-    title="Make an LLM talk about the real world without making things up"
-    href="/docs/grounded-generation"
-    description="Recipe: grounded generation (internal). Your LLM describes something real — the weather, a location, live data — and lies with total confidence. Here's the discipline where the model only ever phrases facts a data layer actually asserts: every fact carries provenance, unsourced and stale claims are stripped, and when there's nothing solid it says nothing instead of inventing."
-  />
-  <Card
-    title="Keep an AI feature reliable in production while you keep changing the prompt"
-    href="/docs/llm-prompt-ops"
-    description="Recipe: LLM prompt ops (internal). You tweak the prompt and quietly break something else; the model makes things up; the provider hiccups and your feature goes dark. Here's how to run an AI feature so none of that happens — change prompts without a deploy, auto-check every output, never hard-fail, and prove a change is better before it ships."
-  />
-  <Card
-    title="Make an AI voice feature start playing in seconds, not after a long wait"
-    href="/docs/voice-ai-pipeline"
-    description="Recipe: voice AI pipeline (internal). You hand LLM-generated narration to a text-to-speech provider and users stare at a loading spinner for tens of seconds before anything plays — or you reach for a faster voice model and it drops your pauses, mispronounces markup, or wanders accent mid-clip. Here's the pipeline that streams audio starting in seconds, keeps pauses and loudness consistent across voice tiers, and degrades gracefully instead of hanging."
-  />
-</Cards>
-
-## Building agents
-
-You run agents that need infrastructure the framework doesn't give you — shared state, memory that survives, patterns proven in production.
-
-<Cards>
-  <Card
-    title="Give your AI agents a shared memory that survives every session"
-    href="/docs/shared-agent-memory"
-    description="Recipe: the office brain (internal). Your agents forget everything when a session ends, re-derive settled facts, and contradict decisions nobody wrote down. Here's how to give them a durable, file-based shared brain — one place agents read at session start and write back at session end, so knowledge compounds instead of resetting."
-  />
-</Cards>
-
-## Running agents at scale
-
-You have several agents doing real work at once, on a schedule, unattended — and you need it safe and honest without watching every move.
-
-<Cards>
-  <Card
-    title="Run a fleet of AI agents on real work without babysitting them"
-    href="/docs/agent-worker-fleet"
-    description="Recipe: the shifts model (draft). Several agents at once, on a schedule, while you're not watching — and it keeps going wrong: they clobber each other, run on your laptop with your credentials, stop to ask permission for everything, or fail silently for days. Here's the pattern that keeps a fleet safe and honest: isolated ephemeral workers, output-gated not permission-gated, fan-out caps, and a dumb watchdog that pages on silence."
-  />
-</Cards>
-
-## Growing what you've built
-
-You're trying to grow — new surfaces, content, audience plays — and need a way to run many small bets safely instead of betting everything on one idea, or watching a winner rot from neglect.
-
-<Cards>
-  <Card
-    title="Run a portfolio of small growth bets so the ones that die, die cheap"
-    href="/docs/growth-loop-mechanics"
-    description="Recipe: growth-loop mechanics (internal). You throw resources at a promising growth idea and months later nobody set a date to check if it's working — or the one thing that DOES work has no owner and quietly decays. Here's the container for running many small growth bets safely: a written kill signal before you plant anything, a named loop-back to the core product, on-site and off-site work split into two jobs, and graduation to a dedicated owner the moment a bet actually works."
-  />
-</Cards>
-
-## New to this?
-
-<Cards>
-  <Card
-    title="What a recipe is, and the receipts bar"
-    href="/docs/format"
-    description="The eight sections, the maturity lifecycle (draft to internal to field-tested to proven), and the evidence discipline that separates these from untested prompt libraries."
-  />
-</Cards>
+The catalog below is generated from the recipe pages themselves. For the format and evidence standards, see [How to use these recipes](/docs/format).

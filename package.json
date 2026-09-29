@@ -5,13 +5,14 @@
   "scripts": {
     "sync:skills": "node scripts/sync-skills.mjs",
     "sync:recipes": "node scripts/sync-recipes.mjs",
-    "prebuild": "node scripts/sync-recipes.mjs && node scripts/sync-skills.mjs",
-    "predev": "node scripts/sync-recipes.mjs && node scripts/sync-skills.mjs",
+    "prebuild": "node scripts/prepare-public-library.mjs",
+    "predev": "node scripts/prepare-public-library.mjs",
     "build": "next build",
     "dev": "next dev",
     "start": "next start",
     "postinstall": "fumadocs-mdx",
-    "types:check": "fumadocs-mdx && next typegen && tsc --noEmit"
+    "types:check": "fumadocs-mdx && next typegen && tsc --noEmit",
+    "test": "node --test scripts/*.test.mjs"
   },
   "dependencies": {
     "cnfast": "^0.0.8",
