@@ -1,4 +1,4 @@
-import { existsSync, lstatSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { existsSync, lstatSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -15,6 +15,9 @@ export function assertPublicPath(path) {
 
 function walk(dir, root = dir) {
   if (!existsSync(dir)) return [];
+  const rootStat = lstatSync(dir);
+  if (rootStat.isSymbolicLink()) throw new Error(`Validation roots cannot be symlinks: ${dir}`);
+  if (!rootStat.isDirectory()) throw new Error(`Expected directory validation root: ${dir}`);
   return readdirSync(dir).sort().flatMap((name) => {
     const path = join(dir, name);
     assertPublicPath(path.slice(root.length + 1));
@@ -42,12 +45,12 @@ export function repairSkillTags(text) {
 
 export function prepareLibrary(root = defaultRoot) {
   const docs = walk(join(root, 'content', 'docs'));
-  walk(join(root, 'public', 'skills'));
-  let repaired = 0;
+  walk(join(root, 'public'));
   for (const path of docs.filter((path) => path.endsWith('.mdx'))) {
-    const before = readFileSync(path, 'utf8');
-    const after = repairSkillTags(before);
-    if (after !== before) { writeFileSync(path, after); repaired++; }
+    const source = readFileSync(path, 'utf8');
+    if (repairSkillTags(source) !== source) {
+      throw new Error(`Escaped SkillFiles tag must be repaired and committed: ${path}`);
+    }
   }
   const manifestPath = join(root, 'lib', 'skill-manifest.json');
   if (!existsSync(manifestPath)) throw new Error('Missing committed public skill manifest');
@@ -59,14 +62,19 @@ export function prepareLibrary(root = defaultRoot) {
       if (file.path.startsWith('/') || file.path.includes('\\')) throw new Error(`Invalid skill file: ${file.path}`);
       const url = `/skills/${slug}/${file.path}`;
       if (file.url !== url) throw new Error(`Unexpected download URL: ${file.url}`);
+      if (!Number.isInteger(file.bytes) || file.bytes < 0) throw new Error(`Invalid skill byte count: ${slug}/${file.path}`);
       const path = join(root, 'public', 'skills', slug, file.path);
-      if (!existsSync(path) || readFileSync(path, 'utf8') !== file.text) throw new Error(`Skill manifest drift: ${slug}/${file.path}`);
+      if (!existsSync(path)) throw new Error(`Skill manifest drift: ${slug}/${file.path}`);
+      const servedText = readFileSync(path, 'utf8');
+      if (servedText !== file.text || Buffer.byteLength(servedText, 'utf8') !== file.bytes) {
+        throw new Error(`Skill manifest drift: ${slug}/${file.path}`);
+      }
     }
     if (entry.zip && (entry.zip !== `/skills/${slug}.zip` || !existsSync(join(root, 'public', entry.zip.slice(1))))) {
       throw new Error(`Missing or unexpected skill archive: ${slug}`);
     }
   }
-  console.log(`[public-library] ${docs.length} documents checked; ${repaired} component tags repaired. No private sources read.`);
+  console.log(`[public-library] ${docs.length} documents checked. Reviewed public files are canonical; no private sources read.`);
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) prepareLibrary();
