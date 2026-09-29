@@ -1,0 +1,56 @@
+---
+title: Build admin tools that humans and agents can share
+description: Give people a clear review surface and agents a small set of typed actions. Keep permissions and business rules in one backend.
+icon: PanelsTopLeft
+recipe: true
+system: AI-native admin
+maturity: draft
+---
+
+<MaturityBadge level="draft" showHint />
+
+## The result
+
+An editor asks an assistant to revise an exhibition title. The assistant prepares a change. A person sees the current and proposed versions, checks validation and approves the exact edit. A normal web form and an agent tool use the same business operation.
+
+“AI-native” does not mean removing the interface or giving a model unrestricted database access. It means designing the task so either a person or an assistant can help, while the service retains control.
+
+## Start with one editing task
+
+A small public catalog is enough. Support reading a record, preparing one title change, previewing it and applying it only after approval. Do not begin with user administration, payments or destructive bulk operations.
+
+```text
+Read → propose → preview → validate → human approval → commit
+```
+
+Download [change-contract.mjs](/skills/ai-native-admin/reference/change-contract.mjs). The in-memory example binds a proposed title to a record version and digest. Applying the change requires a matching approved digest and a server permission context. It rejects stale versions, changed proposals and missing permissions.
+
+This is a contract demonstration, not a complete authentication or database implementation. The example context must come from trusted server code in a real system, never from model-supplied tool arguments.
+
+## Build the shared operation
+
+**1. Keep the business operation outside the UI.** A form submit and an MCP tool call should reach the same validation and permission checks. Do not build a second, more privileged mutation path for agents.
+
+**2. Make proposals first-class records.** Store the target, expected version, proposed fields, author and validation result. Keep a stable proposal ID. The client asks to approve that proposal; it cannot replace the contents after approval.
+
+**3. Show the actual diff.** Display before and after values, warnings and affected records. A natural-language summary is helpful but must not hide the fields being committed. Preserve the user's selection and unsaved work when the assistant proposes a change.
+
+**4. Bind approval to the exact change.** Derive the approving actor from the authenticated session. Record the approved proposal version or digest. A model saying “approved” is not an approval record.
+
+**5. Commit atomically.** Check the expected record version again inside the transaction. Persist an idempotency key with the result, so a retry returns the previous result instead of applying twice. The supplied pure-function example intentionally does not implement transactions or durable idempotency.
+
+**6. Keep an audit and recovery path.** Record actor, proposal, before/after state and result with sensible retention. Provide undo where the operation supports it. Authorization must be checked on both the tool route and ordinary web route.
+
+## Choose the right surface
+
+A normal web admin page may be sufficient. When in-conversation review materially helps, an [MCP App](https://modelcontextprotocol.io/extensions/apps/overview) can provide an interactive view alongside tool results. The standard describes UI resources and host-controlled embedded rendering; it does not replace application authorization.
+
+Keep a text-only tool path and a conventional admin fallback. Test each claimed host separately rather than assuming the same panel behaves identically everywhere.
+
+## Test before connecting real data
+
+Rehearse concurrent edits, a stale preview, duplicate commits, denied access, a modified proposal after approval and a tool result containing hostile instructions. Verify that no agent-supplied identity or approval flag grants authority.
+
+Offline tests cover the example's version, digest and permission checks. Real storage, authentication, approval records, UI behaviour, host integration and rollback remain implementation work. Measure correction effort and successful completion, not the number of generated changes.
+
+[Agent implementation instructions](/skills/ai-native-admin/SKILL.md).

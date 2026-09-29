@@ -1,0 +1,58 @@
+---
+title: Build an autonomous daily desk, not an autonomous company
+description: Turn a small queue into reviewable drafts on a schedule. Bound the work, keep consequential decisions with a person, and make missed runs visible.
+icon: Workflow
+recipe: true
+system: Scoped autonomous operations
+maturity: draft
+---
+
+<MaturityBadge level="draft" showHint />
+
+## The result
+
+Each working day, a small operations desk reads an approved queue, prepares a limited number of internal drafts and puts them in a human review inbox. No work means a recorded `no_work` result, not manufactured activity.
+
+A useful first example is an inquiry-preparation desk: read a few incoming project requests, gather the approved facts needed for a reply, and prepare drafts. It does not send emails, set prices, commit delivery dates, change permissions or spend money.
+
+This is one workflow, not a blueprint for running an entire organization.
+
+## The smallest useful contract
+
+```text
+Approved queue → bounded preparation → internal drafts → human review
+                       ↓
+                completion record
+```
+
+Download [queue.mjs](/skills/scoped-autonomous-operations/reference/queue.mjs). It demonstrates a capped, deduplicated batch that can only return draft proposals. It has no model, scheduler, inbox connection or send capability. The sample's three-item default is an illustrative work budget, not a measured optimum.
+
+## Build the desk
+
+**1. Select a queue and a result.** Pick one input source and one deliverable. Write down what a useful draft contains and which missing facts require the desk to stop. Use synthetic requests until permissions and data handling have been checked.
+
+**2. Grant the minimum capabilities.** Reading the approved queue and writing internal drafts should be enough. Keep outward actions outside the worker's credentials. A sentence in a prompt is not a substitute for removing a send or payment capability.
+
+**3. Bound every run.** Cap items, execution time and model spend. Use an atomic run claim or lease to prevent overlap, plus durable item IDs to avoid processing the same work again on the next day. The in-memory sample only deduplicates within one batch.
+
+**4. Keep the source attached.** A reviewer should see the original request, relevant evidence, unresolved questions and proposed response. Untrusted request text is source material, not permission to change the desk's instructions.
+
+**5. Record actual completion.** Store the run ID, input cursor, output references, actual usage and final state. A configured schedule is not a completed run. Mark `no_work`, `completed`, `failed` and `needs_access` separately.
+
+**6. Add a simple external check.** Compare the last completed run with the expected schedule and report a missed deadline. Monitor the delivered drafts as well as job execution. A process can run successfully and still produce nothing useful.
+
+**7. Improve from human decisions.** Track accepted drafts, correction effort and rejected suggestions. Change the workflow only when that evidence identifies a specific problem. Do not respond to poor output by adding more agents automatically.
+
+## Failure rehearsal
+
+Before turning on a schedule, simulate a revoked credential, an empty queue, a duplicate event, an overlong request, a model timeout and a reviewer who is unavailable. The desk must leave recoverable state and must never turn missing approval into permission.
+
+A retry is safe only when it cannot duplicate a consequential action. Keep writes to the draft store idempotent, and never put an email send inside an automatic retry loop.
+
+## Evidence and maintenance
+
+Offline tests cover capped batch size, within-batch deduplication, empty input and draft-only output. They do not prove scheduled reliability or an autonomous organization. A real pilot must record completed runs, accepted outputs, human correction time and actual cost before a stronger claim is appropriate.
+
+Review permissions and missed-run checks regularly. Stop the desk when its drafts consistently cost more effort to correct than they save.
+
+[Agent implementation instructions](/skills/scoped-autonomous-operations/SKILL.md).
