@@ -10,7 +10,7 @@ const STYLES: Record<
     label: 'Draft',
     className:
       'bg-neutral-100 text-neutral-700 border-neutral-300 dark:bg-neutral-800 dark:text-neutral-300 dark:border-neutral-700',
-    hint: 'Not yet run in production.',
+    hint: 'Evidence or testing is still incomplete.',
   },
   internal: {
     label: 'In production',
