@@ -1,6 +1,6 @@
 # Agent Recipes kit, by Naturate
 
-Twelve AI build patterns. Each folder holds a `SKILL.md` your coding agent can follow and
+Sixteen AI build patterns. Each folder holds a `SKILL.md` your coding agent can follow and
 small reference files you can read in a few minutes.
 
 ## How to use it
@@ -31,6 +31,15 @@ its own.
 | agent-worker-fleet | Run several agents on real work unattended |
 | two-agents-one-repo | Run two coding agents in one repository without losing work |
 | agent-safe-releases | Let agents ship without breaking production |
+| prove-a-change | Prove an AI change is better before it ships |
+| honest-agent-reports | Stop agents overstating what they did |
+| agent-lanes | Give each agent a lane |
+| when-to-say-nothing | Teach an assistant when to say nothing |
+
+## Licence
+
+These files are licensed under Apache 2.0. Use them in your own product freely.
+© 2026 Naturate LLC.
 
 ## Want it built with you?
 

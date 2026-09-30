@@ -1,0 +1,74 @@
+---
+title: Give each agent a lane
+description: Ask a general agent to run your marketing and it does a bit of everything and owns nothing. Here is how to split the work into agents that each own one job and one number, and know what is not theirs.
+icon: Waypoints
+recipe: true
+system: Agent charters
+maturity: internal
+---
+
+<MaturityBadge level="internal" showHint />
+
+## The result
+
+Each agent has a one-page charter: the job it owns, the number it answers for, what it may do alone, and a list of neighbouring work that belongs to someone else, by name. A task goes to exactly one agent. Work that belongs to nobody is visible as a gap.
+
+## Use this when
+
+You run more than three or four agents, or one general agent keeps producing work that is broad and shallow.
+
+Skip it when one agent does one job. A charter for a team of one is paperwork.
+
+## What goes wrong without lanes
+
+- **Two agents do the same task** and produce two answers.
+- **Nobody does the dull part.** Every agent drafts the strategy; none sends the follow-up.
+- **An agent wanders.** Asked for copy, it redesigns the page.
+- **Advice with no owner.** Four agents comment on a decision and none of them is responsible for the outcome.
+
+## The charter
+
+One page per agent. Download [charter.example.md](/skills/agent-lanes/reference/charter.example.md) for the template.
+
+**1. One sentence for the job.** If it needs "and", it is two agents or the job is not clear yet.
+
+**2. One number.** The result this agent answers for. An agent with no number optimises for looking busy.
+
+**3. What it owns.** Concrete things: the pricing page, the weekly report, the backlog for one product.
+
+**4. What is not its job, and whose it is.** This is the part that does the work. "Not the copy on the page; that is the copywriter. Not the deploy; that is the platform agent." Name the neighbour every time. A list of exclusions with no names only tells the agent to stop.
+
+**5. What it may do alone.** Drafting, staging and checking are usually free. Anything sent to a person outside the team is drafted by the agent and sent by a human. Anything irreversible waits for a named person.
+
+**6. Who it reports to.** A lead that dispatches and reviews. A flat group of twenty agents has no one to settle a disagreement.
+
+**7. Three examples of when to call it.** Written as real requests. These are what a router matches against, and they are the fastest way to see two charters overlap.
+
+## Running the team
+
+**Route by charter.** A new task is matched to one owner. Download [route.mjs](/skills/agent-lanes/reference/route.mjs) for a small router that returns the owner, or reports that a task is unowned or claimed twice.
+
+**Keep tasks on one board.** A request made in conversation becomes a ticket before work starts. Work that exists only in a chat cannot be picked up, reviewed or counted.
+
+**Separate the builder from the judge.** The agent that writes something does not grade it. A different agent owns the measurement.
+
+**Keep one dissenter.** One agent whose job is to argue the other side when everyone agrees. Agreement among agents that share the same context is weak evidence.
+
+**One agent stands in for the decider.** When leads disagree and the person in charge is away, one named agent makes the reversible calls and flags the ones that are not.
+
+**Add an agent only for unowned work.** When a task keeps landing in a gap, that is the case for a new charter. A new agent for every idea produces a roster nobody can route.
+
+**Review the roster.** On a schedule, ask of each agent: did it move its number, and was it called at all? Retire the ones that were not.
+
+## What goes wrong
+
+- **Charters describe a personality.** A name and a voice are fine. They are not a lane. The exclusions are.
+- **The exclusions go stale.** A new agent takes over part of a job and the old charter still claims it. Update both when you add one.
+- **Too many agents too early.** Start with three: one that builds, one that checks, one that decides. Split a lane when it is visibly overloaded.
+- **Leads become relays.** A lead that only forwards work adds a hop. It should be able to do the job and review it.
+
+## Evidence
+
+This is how a working team of several dozen agents across product, engineering, marketing and operations is organised. The exclusion list with named neighbours was added after repeated double work. The router has offline tests for a single owner, an unowned task and a task two charters claim.
+
+[Agent implementation instructions](/skills/agent-lanes/SKILL.md).

@@ -23,7 +23,7 @@ test('kit archive holds exactly the reviewed public skill files, byte for byte',
 });
 test('every skill in the kit has instructions', () => {
   const folders = new Set(kitEntries(skillsDir).filter((entry) => entry.includes('/')).map((entry) => entry.split('/')[0]));
-  assert.ok(folders.size >= 12);
+  assert.ok(folders.size >= 16);
   for (const folder of folders) assert.ok(kitEntries(skillsDir).includes(`${folder}/SKILL.md`), folder);
 });
 test('no archive is served from the site; the download sits behind the email form', () => {

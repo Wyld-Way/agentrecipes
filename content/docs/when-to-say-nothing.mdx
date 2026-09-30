@@ -1,0 +1,67 @@
+---
+title: Teach an assistant when to say nothing
+description: An assistant that speaks up whenever it can is muted within a week. Here is how to build one whose default is silence, that speaks only when the moment has earned it, and that says one useful thing when it does.
+icon: BellOff
+recipe: true
+system: Restraint
+maturity: internal
+---
+
+<MaturityBadge level="internal" showHint />
+
+## The result
+
+A proactive assistant that is quiet almost all the time. When it does speak, it has a reason it can state, it says one line, and the person usually acts on it. Every time it chose silence, it recorded why.
+
+## Use this when
+
+Your product interrupts people: notifications, nudges, reminders, a companion that comments on what someone is doing.
+
+Skip it when the assistant only answers questions. It is already silent until asked.
+
+## Why assistants talk too much
+
+- **Speaking is the visible output.** A team measures sends, so the assistant sends.
+- **The model will always find something to say.** Asked "is there anything worth mentioning?", a language model answers yes.
+- **Triggers sound right and are wrong.** A rule written in a meeting fires constantly or never once it meets real behaviour.
+- **Each interruption looks cheap.** The cost is the next ten being ignored.
+
+## The design
+
+**1. Make silence the default result.** The decision returns either a line to say or silence with a reason. Silence is a normal outcome and is logged like any other.
+
+**2. Decide with rules before you ask a model.** Minimum gap since the last interruption, a daily limit, quiet hours, and whether the person is in the middle of something. These are cheap, testable and do not improvise. Download [nudge-gate.mjs](/skills/when-to-say-nothing/reference/nudge-gate.mjs) for a small gate that returns a decision and its reason.
+
+**3. Require evidence to speak.** The moment must show a specific, recorded signal. "It has been a while" is a schedule. A reminder on a schedule should be called a reminder.
+
+**4. Give the model a summary.** A compact, abstracted account of the recent period: counts, durations, a few labelled patterns. It decides better on a summary than on a raw stream, and the person's screen contents never leave the device.
+
+**5. Ask the model one question.** Does this moment earn an interruption, yes or no, and why? Generate the line only after a yes.
+
+**6. One line, about something real.** It names what was noticed and offers one thing to do. It is grounded in facts the system holds; see [grounded generation](/docs/grounded-generation).
+
+**7. Let the person turn it down cheaply.** One tap to dismiss, and a dismissal lengthens the gap before the next attempt.
+
+**8. Replay before you ship.** Run the triggers over recorded days of real activity. Count how often each would have fired and read a sample. This is where a trigger that never fires, and one that fires forty times a day, both show up.
+
+## What to measure
+
+- **Acted on.** Of the times it spoke, how often the person did the thing.
+- **Dismissed.** A rising rate means the bar is too low.
+- **Silence reasons.** The mix tells you which rule is doing the work. If one rule blocks everything, the assistant is effectively off.
+- **Muted or uninstalled.** The cost of getting this wrong.
+
+Do not measure interruptions sent. It rewards the wrong thing.
+
+## What goes wrong
+
+- **It never speaks.** Every rule is reasonable and together they leave no opening. The replay in step 8 shows this before launch.
+- **It invents a reason.** Asked to justify a nudge, the model produces a plausible one. Require the reason to point at a recorded signal.
+- **It is tested only in the lab.** All tests pass and the first real week is wrong, because the tests encoded the plan. Live with it for some days before release.
+- **It comments on the wrong thing.** What moves people is rarely the pleasant fact. It is something true about what they are doing right now that they had not noticed.
+
+## Evidence
+
+This comes from building a companion whose job is to decide between silence and one nudge. Its triggers were rewritten after replaying recorded activity showed that several would never have fired and one would have fired constantly, while every test passed. The gate has offline tests for the minimum gap, the daily limit, quiet hours, missing evidence and a dismissal lengthening the gap.
+
+[Agent implementation instructions](/skills/when-to-say-nothing/SKILL.md).

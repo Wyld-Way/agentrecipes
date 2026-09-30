@@ -65,3 +65,68 @@ test('release check: only the validated commit on production passes', async () =
   assert.equal(checkRelease({ environment: 'production', commit: sha }, '').ok, false);
   assert.equal(checkRelease(null, sha).ok, false);
 });
+
+test('compare runs: counts flips, refuses small samples and mismatched datasets', async () => {
+  const { compareRuns } = await import('../public/skills/prove-a-change/reference/compare-runs.mjs');
+  const base = Array.from({ length: 20 }, (_, i) => ({ id: `c${i}`, pass: i < 10 }));
+  const better = base.map((row, i) => ({ id: row.id, pass: i < 14 }));
+  const result = compareRuns(base, better);
+  assert.equal(result.verdict, 'better');
+  assert.equal(result.fixed.length, 4);
+  assert.deepEqual(result.regressed, []);
+  const traded = base.map((row, i) => ({ id: row.id, pass: i >= 1 && i < 14 }));
+  assert.equal(compareRuns(base, traded).verdict, 'not_better');
+  assert.deepEqual(compareRuns(base, traded).regressed, ['c0']);
+  assert.equal(compareRuns(base, traded, { maxRegressions: 1 }).verdict, 'better');
+  assert.equal(compareRuns(base.slice(0, 5), better.slice(0, 5)).verdict, 'too_few_cases');
+  assert.throws(() => compareRuns(base, better.slice(1)), /different cases/);
+  assert.throws(() => compareRuns([...base, base[0]], [...better, better[0]]), /Duplicate/);
+});
+
+test('claim check: each status needs its own evidence and plain wording', async () => {
+  const { checkClaim, checkReport } = await import('../public/skills/honest-agent-reports/reference/claim-check.mjs');
+  assert.equal(checkClaim({ status: 'tested', evidence: { command: 'npm test', output: '18 pass' } }).ok, true);
+  assert.equal(checkClaim({ status: 'tested', evidence: { command: 'npm test' } }).ok, false);
+  assert.equal(checkClaim({ status: 'done', evidence: {} }).ok, false);
+  assert.equal(checkClaim({ status: 'deployed', evidence: { liveRevision: 'a1b2c3d4', commit: 'a1b2c3d4e5' } }).ok, true);
+  assert.equal(checkClaim({ status: 'deployed', evidence: { liveRevision: 'ffffffff', commit: 'a1b2c3d4e5' } }).ok, false);
+  assert.equal(checkClaim({ status: 'verified', summary: 'Should be working now', evidence: { action: 'opened the page', observed: 'new text' } }).ok, false);
+  const report = checkReport([
+    { item: 'a', status: 'merged', evidence: { commit: 'a1b2c3d' } },
+    { item: 'b', status: 'deployed', evidence: {} },
+  ]);
+  assert.equal(report.ok, false);
+  assert.deepEqual(report.reopen.map((entry) => entry.item), ['b']);
+});
+
+test('lanes: one owner, an unowned task, an overlap and a referral', async () => {
+  const { route } = await import('../public/skills/agent-lanes/reference/route.mjs');
+  const charters = [
+    { name: 'notes', owns: ['release notes', 'changelog'], notMine: [{ keywords: ['announcement'], owner: 'campaigns' }] },
+    { name: 'campaigns', owns: ['announcement', 'social post'], notMine: [] },
+    { name: 'docs', owns: ['changelog'], notMine: [] },
+  ];
+  assert.equal(route('Write the release notes', charters).owner, 'notes');
+  assert.equal(route('Draft the launch announcement', charters).owner, 'campaigns');
+  assert.equal(route('Fix the login bug', charters).status, 'unowned');
+  assert.deepEqual(route('Update the changelog', charters).because, ['notes', 'docs']);
+  assert.equal(route('Release notes and an announcement', charters).owner, 'campaigns');
+});
+
+test('nudge gate: silence by default, one reason each, speaks only on a fresh signal', async () => {
+  const { nudgeGate } = await import('../public/skills/when-to-say-nothing/reference/nudge-gate.mjs');
+  const now = 1_000 * 60 * 60 * 1000;
+  const minute = 60 * 1000;
+  const signal = { kind: 'long-unbroken-session', observedAt: now - 5 * minute };
+  const base = { now, localHour: 14, signal };
+  assert.deepEqual(nudgeGate(base), { speak: true, reason: 'long-unbroken-session' });
+  assert.equal(nudgeGate({ ...base, signal: null }).reason, 'no-signal');
+  assert.equal(nudgeGate({ ...base, signal: { ...signal, observedAt: now - 45 * minute } }).reason, 'stale-signal');
+  assert.equal(nudgeGate({ ...base, localHour: 23 }).reason, 'quiet-hours');
+  assert.equal(nudgeGate({ ...base, localHour: 6 }).reason, 'quiet-hours');
+  assert.equal(nudgeGate({ ...base, busy: true }).reason, 'person-is-busy');
+  assert.equal(nudgeGate({ ...base, nudgesToday: 2 }).reason, 'daily-limit');
+  assert.equal(nudgeGate({ ...base, lastNudgeAt: now - 60 * minute }).reason, 'too-soon');
+  assert.equal(nudgeGate({ ...base, lastNudgeAt: now - 100 * minute }).speak, true);
+  assert.equal(nudgeGate({ ...base, lastNudgeAt: now - 100 * minute, recentDismissals: 1 }).reason, 'too-soon');
+});

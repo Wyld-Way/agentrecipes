@@ -1,25 +1,39 @@
 import Link from 'next/link';
 import { source } from '@/lib/source';
-import { MaturityBadge } from '@/components/maturity-badge';
+
+// Grouped by the job a reader has, in the same order as naturate.io/recipes.
+const groups = [
+  { title: 'Connect AI to your product', note: 'Let agents use what you already have, through a boundary you control.', slugs: ['service-to-mcp', 'ai-native-admin', 'pointmoon-grounding'] },
+  { title: 'Make AI output reliable', note: 'For features where a wrong or late answer costs you trust.', slugs: ['llm-prompt-ops', 'prove-a-change', 'grounded-generation', 'voice-ai-pipeline', 'when-to-say-nothing'] },
+  { title: 'Run agents on real work', note: 'Several agents, real tasks, and a person who still decides what goes out.', slugs: ['cross-agent-handoff', 'scoped-autonomous-operations', 'shared-agent-memory', 'agent-worker-fleet', 'agent-lanes', 'two-agents-one-repo', 'agent-safe-releases', 'honest-agent-reports'] },
+];
 
 export function RecipeCatalog() {
   const recipes = source.getPages().filter((page) => page.data.recipe === true);
-  const groups = [
-    { title: 'Implementation patterns', note: 'Existing recipes with evidence from their original implementation. Check each guide’s limits before using it.', pages: recipes.filter((page) => page.data.maturity && page.data.maturity !== 'draft') },
-    { title: 'New and experimental guides', note: 'Drafts to review and try. These are not independently field-tested systems.', pages: recipes.filter((page) => !page.data.maturity || page.data.maturity === 'draft') },
-  ];
-  return <div className="not-prose space-y-12">
-    {groups.filter((group) => group.pages.length > 0).map((group) => <section key={group.title}>
-      <h2 className="text-2xl font-semibold tracking-tight">{group.title}</h2>
-      <p className="mt-2 max-w-2xl text-sm leading-6 text-fd-muted-foreground">{group.note}</p>
-      <div className="mt-5 grid gap-4 sm:grid-cols-2">
-        {group.pages.sort((a, b) => a.data.title.localeCompare(b.data.title)).map((page) => <Link key={page.url} href={page.url} className="group flex flex-col rounded-xl border bg-fd-card p-6 transition-colors hover:border-fd-primary/50 focus-visible:outline-2 focus-visible:outline-offset-4">
-          <MaturityBadge level={page.data.maturity ?? 'draft'} />
-          <h3 className="mt-4 text-lg font-semibold leading-snug">{page.data.title}</h3>
-          <p className="mt-3 text-sm leading-6 text-fd-muted-foreground">{page.data.description}</p>
-          <span className="mt-auto pt-5 text-sm font-medium">Read the recipe <span aria-hidden="true">→</span></span>
-        </Link>)}
+  const bySlug = new Map(recipes.map((page) => [page.slugs.join('/'), page]));
+  const grouped = new Set(groups.flatMap((group) => group.slugs));
+  const rest = recipes.filter((page) => !grouped.has(page.slugs.join('/')));
+  const sections = [
+    ...groups.map((group) => ({ ...group, pages: group.slugs.flatMap((slug) => bySlug.get(slug) ?? []) })),
+    { title: 'More guides', note: '', pages: rest },
+  ].filter((section) => section.pages.length > 0);
+
+  return <div className="not-prose space-y-16">
+    {sections.map((section) => <section key={section.title} className="grid gap-x-12 gap-y-6 lg:grid-cols-3">
+      <div>
+        <h2 className="text-2xl font-semibold text-fd-primary">{section.title}</h2>
+        {section.note && <p className="mt-3 leading-7 text-fd-muted-foreground">{section.note}</p>}
       </div>
+      <ul className="lg:col-span-2">
+        {section.pages.map((page) => <li key={page.url} className="border-t border-fd-border">
+          <Link href={page.url} className="group block py-6 focus-visible:outline-2 focus-visible:outline-offset-4">
+            <h3 className="text-xl font-semibold text-fd-primary decoration-green underline-offset-4 group-hover:underline">
+              {page.data.title}<span className="ml-2 inline-block transition group-hover:translate-x-1" aria-hidden="true">→</span>
+            </h3>
+            <p className="mt-2 leading-7 text-fd-muted-foreground">{page.data.description}</p>
+          </Link>
+        </li>)}
+      </ul>
     </section>)}
   </div>;
 }

@@ -5,13 +5,12 @@ export function RecipeCTA({ slug }: { slug: string }) {
   url.searchParams.set('utm_source', 'agent-recipes');
   url.searchParams.set('utm_medium', 'recipe');
   url.searchParams.set('utm_content', slug);
-  return <aside className="not-prose mt-12 rounded-xl border bg-fd-card p-6">
-    <p className="text-xs font-medium uppercase tracking-wide text-fd-muted-foreground">Build it with Naturate</p>
-    <h2 className="mt-3 text-xl font-semibold">Put this pattern to work in your product.</h2>
-    <p className="mt-3 max-w-xl text-sm leading-6 text-fd-muted-foreground">Naturate helps teams design and build useful AI integrations, internal tools and digital experiences. Start with one workflow, a clear result and a way to test it.</p>
-    <div className="mt-5 flex flex-wrap items-center gap-3">
-      <a href={url.toString()} className="inline-flex rounded-md bg-fd-primary px-4 py-2 text-sm font-medium text-fd-primary-foreground">Talk about your project <span className="ml-2" aria-hidden="true">→</span></a>
-      <a href={kitUrl('recipe', slug)} className="inline-flex rounded-md border px-4 py-2 text-sm font-medium">Get every guide as one kit</a>
+  return <aside className="not-prose mt-16 rounded-3xl bg-dark-green px-6 py-10 text-white sm:px-10">
+    <h2 className="text-2xl font-semibold text-white sm:text-3xl">The recipe is free. Naturate can build the production version with you.</h2>
+    <p className="mt-4 max-w-xl leading-7 text-pale-green">We adapt a pattern to your product, connect it to the systems you already have, and leave your team with a working implementation they own.</p>
+    <div className="mt-6 flex flex-wrap items-center gap-3">
+      <a href={url.toString()} className="inline-flex rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-dark-green transition hover:bg-green">Tell us what you are building</a>
+      <a href={kitUrl('recipe', slug)} className="inline-flex rounded-full border border-white/40 px-5 py-2.5 text-sm font-semibold text-white transition hover:border-white">Get every guide as one kit</a>
     </div>
   </aside>;
 }

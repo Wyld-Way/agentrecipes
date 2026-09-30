@@ -1,0 +1,75 @@
+---
+title: Prove an AI change is better before it ships
+description: You changed a prompt or a model and it looks better on the three examples you tried. Here is how to find out whether it is better on the inputs your users actually send, and what it broke, before anyone sees it.
+icon: FlaskConical
+recipe: true
+system: Evaluation before release
+maturity: internal
+---
+
+<MaturityBadge level="internal" showHint />
+
+## The result
+
+Every change to a prompt, a model or a rule is run against the same set of real past inputs as the version it replaces. You see which cases got better, which got worse, and whether the change clears a bar you set before you looked. Then a person promotes it.
+
+## Use this when
+
+An AI feature is live and you change it more than once a month.
+
+Skip the full loop for a feature with no users yet. Write the quality bar first; there is nothing to measure against without it.
+
+## Why "it looks better" is not enough
+
+- **You tested the cases you were thinking about.** The change fixes those and quietly breaks a kind of input you did not try.
+- **Averages hide regressions.** A score that moves from 82 to 84 can contain ten cases that went from pass to fail.
+- **Tests check the code, not the fit.** A feature can pass every test and still never fire in real use, because the trigger that sounded right in a plan does not match how people behave.
+- **A rule in a prompt cannot be observed.** "Never produce these fourteen patterns" is a filter you cannot search, count or test.
+
+## The loop
+
+**1. Write the bar down.** A short list of yes or no questions a good output must pass. If you cannot write it, you cannot measure it.
+
+**2. Build the dataset from real inputs.** Pull recent production inputs, and deliberately include the ones that failed. Freeze it. A dataset that changes between runs cannot compare two versions.
+
+**3. Score in layers, cheapest first.**
+   - Deterministic checks for anything a pattern can catch. They run on everything and cost nothing.
+   - A cheap model as judge, answering the yes or no questions from step 1.
+   - A grounding check wherever the output states facts.
+
+**4. Check the judge against a person.** Label thirty outputs by hand and compare. A judge that disagrees with you on a question is measuring something else. Fix the question or drop it.
+
+**5. Run both versions on the same inputs.** Same dataset, same scoring, baseline and candidate.
+
+**6. Compare case by case.** Count the flips: fail to pass, and pass to fail. Read every case that got worse. Download [compare-runs.mjs](/skills/prove-a-change/reference/compare-runs.mjs) for a small comparison that reports flips and refuses to give a verdict on too few cases.
+
+**7. Decide the threshold before the run.** For example: no more than two regressions, and a net gain. Deciding after you see the numbers is how a change you like gets through.
+
+**8. Promote by hand, then check production.** Promotion is its own act, separate from the run. After it is live, look at the first real outputs. A run on a dataset is a forecast.
+
+## Three tests most suites are missing
+
+**Replay recorded reality.** Before shipping a behaviour that depends on how people act, run it over recorded days of real activity. A trigger defined as "five events in ten minutes" reads well and may never occur. The data to find that out is usually already on disk.
+
+**One fixture per guard.** When you fix a bug, the real input that caused it is often blocked by two of your new checks at once. Delete either check and the test still passes. Write one input that only that check can stop, then delete the check and confirm the test fails.
+
+**Test the reach.** When a fix lives in one shared function, behaviour tests pass even if half the product never calls it. Add a test that lists every place the old path is used and asserts each one goes through the new function, with a written reason for each exception.
+
+## Writing rules the model will follow
+
+- State what you want. A rule that quotes the phrase it forbids makes the phrase more likely.
+- Past about five forbidden patterns, move them out of the prompt into a check that runs on the output and logs which rule fired. You can count a log.
+- Record who added each rule and why. An unexplained rule blocks good output for months before anyone questions it.
+
+## What goes wrong
+
+- **The dataset goes stale.** Six months on, it no longer looks like what users send. Refresh it on a schedule and keep the old one for comparison.
+- **The judge becomes a gate.** Its latency and errors are now on the user's path. Keep judges observing; block only on deterministic checks.
+- **Score names change.** Dashboards and comparisons break silently. Add new names; never rename.
+- **An automated script promotes.** A seeding or sync script overwrites the live version with an older one. Anything automatic writes a candidate. Only a person promotes.
+
+## Evidence
+
+This is the release loop on a content pipeline where prompts change weekly. Each of the three tests above catches a kind of failure that a full, passing test suite misses. The comparison script has offline tests for flips, the minimum sample and mismatched datasets.
+
+[Agent implementation instructions](/skills/prove-a-change/SKILL.md).
