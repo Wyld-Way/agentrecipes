@@ -22,8 +22,7 @@ agents (if the latter, tell them they don't need fleet machinery yet).
 
 1. **Isolated ephemeral workers.** Each worker runs in a fresh cloud sandbox / CI
    runner, fresh checkout per task, torn down after. Never the dev's machine, never
-   a long-lived working tree. This is non-negotiable — it's the one thing every
-   failure had in common (laptop-scheduled died; headless-CI never missed).
+   a long-lived working tree. This is non-negotiable — schedules that depend on a personal machine miss runs; headless CI jobs do not.
 
 2. **Scoped, expiring credentials.** Per-worker tokens with the narrowest rights
    (branch-push, not merge; no prod; no secrets), and a spend cap on the model key
@@ -54,7 +53,7 @@ agents (if the latter, tell them they don't need fleet machinery yet).
 
 - Nothing unattended on the human's machine.
 - Every status must derive from real artifacts, never an agent's self-report
-  ("state theater" is how the board lies while the fleet is dead).
+  (a status board can say "in progress" while nothing is running).
 - Answer a failure by making the work happen + watching for its absence — never by
   adding another component that only reports state (control-plane accretion).
 - New runtime → probation window, evidence before redesign.

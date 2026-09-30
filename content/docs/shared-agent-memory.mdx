@@ -1,6 +1,6 @@
 ---
 title: "Give your AI agents a shared memory that survives every session"
-description: "Your agents forget everything when a session ends, re-derive settled facts, and contradict decisions nobody wrote down. Here's how to give them a durable, file-based shared brain — one place agents read at session start and write back at session end, so knowledge compounds instead of resetting."
+description: "Your agents forget everything when a session ends, re-derive settled facts, and contradict decisions nobody wrote down. Here's how to give them a durable, file-based shared brain, one place agents read at session start and write back at session end, so knowledge compounds instead of resetting."
 icon: Brain
 recipe: true
 system: "shared agent memory"
@@ -9,16 +9,16 @@ steps:
   - name: "Make one repo the single source of truth (the \"constitution\")"
     text: "Durable knowledge, decisions, preferences, and current state all live here as plain markdown. Agents read from it at the start of a session and write back at the end. One brain, one place."
   - name: "Separate knowledge by how it changes"
-    text: "Four kinds, four homes — mixing them is why memory rots: - Durable knowledge / preferences — facts that stay true (who the user is, how they work, hard-won lessons). One fact per file. - Current status — what exists, what's live, what's in flight. Overwritten, not appended: current state, not a changelog. - Decisions — settled calls, with the why. Append-only; a decision is a record, not a status. - Time-bound work — plans with a lifecycle (draft → active → done → archived). Dated, and archived when finished, never deleted."
+    text: "Four kinds, four homes, mixing them is why memory rots: - Durable knowledge / preferences, facts that stay true (who the user is, how they work, hard-won lessons). One fact per file. - Current status, what exists, what's live, what's in flight. Overwritten, not appended: current state, not a changelog. - Decisions, settled calls, with the why. Append-only; a decision is a record, not a status. - Time-bound work, plans with a lifecycle (draft → active → done → archived). Dated, and archived when finished, never deleted."
   - name: "One fact per file, plus an index"
-    text: "Each durable memory is its own small file with frontmatter — a name (stable slug), a one-line description (used to judge relevance on recall), and a type. A single index file lists one line per memory so an agent can scan what exists before loading the bodies. One monolithic memory file becomes unfindable and un-mergeable; small files + an index scale."
+    text: "Each durable memory is its own small file with frontmatter, a name (stable slug), a one-line description (used to judge relevance on recall), and a type. A single index file lists one line per memory so an agent can scan what exists before loading the bodies. One monolithic memory file becomes unfindable and un-mergeable; small files + an index scale."
   - name: "Write the read/write protocol into the agent's rules"
-    text: "In the file your agent loads every session, state plainly: at session start, read the index + the relevant files; at session end, write back what changed. The protocol is what makes the brain live — without it you have a folder nobody opens. See reference/AGENTS.md."
+    text: "In the file your agent loads every session, state plainly: at session start, read the index + the relevant files; at session end, write back what changed. The protocol is what makes the brain live, without it you have a folder nobody opens. See reference/AGENTS.md."
   - name: "Prefer artifacts over chat"
-    text: "A result that matters gets written to a file in the brain, not left in a conversation that evaporates. If it's worth producing, it's worth a place to be found again. (Quick lookups stay in chat — don't file everything; file the things meant to compound.)"
+    text: "A result that matters gets written to a file in the brain, not left in a conversation that evaporates. If it's worth producing, it's worth a place to be found again. (Quick lookups stay in chat, don't file everything; file the things meant to compound.)"
   - name: "Link related memories"
-    text: "A lightweight [[other-memory-name]] link between files lets the brain form a graph — an agent reading one fact discovers the related ones. A link to a memory that doesn't exist yet is fine; it marks something worth writing later."
-  - name: "Give it a curator (the pulse — see below)"
+    text: "A lightweight [[other-memory-name]] link between files lets the brain form a graph, an agent reading one fact discovers the related ones. A link to a memory that doesn't exist yet is fine; it marks something worth writing later."
+  - name: "Give it a curator (see Keeping it healthy)"
     text: "Memory rots without one."
 ---
 
@@ -44,14 +44,14 @@ after session, and you become the only long-term memory the system has.
 ## What you get
 
 A durable, file-based brain your agents read at the start of every session and
-write back to at the end — so knowledge accumulates instead of resetting:
+write back to at the end, so knowledge accumulates instead of resetting:
 
 - **Agents start already knowing** the project, the settled decisions, and your
-  preferences — no re-briefing.
-- **One shared brain across all agents** — what one learns, the others can read.
-- **Knowledge is typed and findable** — durable facts, current status, settled
+  preferences, no re-briefing.
+- **One shared brain across all agents**: what one learns, the others can read.
+- **Knowledge is typed and findable**: durable facts, current status, settled
   decisions, and time-bound work live in separate, predictable places.
-- **It doesn't rot** — a curation habit keeps it deduplicated, current, and small
+- **It doesn't rot**: a curation habit keeps it deduplicated, current, and small
   enough to actually load.
 
 ## Use when / skip when
@@ -61,37 +61,37 @@ more than one agent, and you're tired of being the only thing that remembers.
 
 **Skip when** it's a one-off task, or the knowledge already lives somewhere the
 agent reads anyway (the code, the git history, a ticket). Don't store what the
-repo already records — store only what isn't derivable from it.
+repo already records, store only what isn't derivable from it.
 
 ## Ingredients
 
-- A **version-controlled repo** the agents can read and write (git is ideal — the
-  history is a free audit log). BYO — this is your repo, not a service.
+- A **version-controlled repo** the agents can read and write (git is ideal, the
+  history is a free audit log). BYO. This is your repo, not a service.
 - Agents that can **read files at session start and write files at session end**
   (a rules/context file that instructs them to is enough).
-- A **human or agent curator** for the periodic cleanup pass. That's it — no
+- A **human or agent curator** for the periodic cleanup pass. That's it, no
   database, no vector store, no framework.
 
 ## The recipe
 
-**1. Make one repo the single source of truth (the "constitution").** Durable
+**1. Make one repo the single source of truth.** Durable
 knowledge, decisions, preferences, and current state all live here as plain
 markdown. Agents read from it at the start of a session and write back at the
 end. One brain, one place.
 
-**2. Separate knowledge by how it changes.** Four kinds, four homes — mixing them
+**2. Separate knowledge by how it changes.** Four kinds, four homes, mixing them
 is why memory rots:
-   - **Durable knowledge / preferences** — facts that stay true (who the user is,
+   - **Durable knowledge / preferences**: facts that stay true (who the user is,
      how they work, hard-won lessons). One fact per file.
-   - **Current status** — what exists, what's live, what's in flight. Overwritten,
+   - **Current status**: what exists, what's live, what's in flight. Overwritten,
      not appended: current state, not a changelog.
-   - **Decisions** — settled calls, with the why. Append-only; a decision is a
+   - **Decisions**: settled calls, with the why. Append-only; a decision is a
      record, not a status.
-   - **Time-bound work** — plans with a lifecycle (draft → active → done →
+   - **Time-bound work**: plans with a lifecycle (draft → active → done →
      archived). Dated, and archived when finished, never deleted.
 
 **3. One fact per file, plus an index.** Each durable memory is its own small file
-with frontmatter — a `name` (stable slug), a one-line `description` (used to judge
+with frontmatter, a `name` (stable slug), a one-line `description` (used to judge
 relevance on recall), and a `type`. A single index file lists one line per memory
 so an agent can scan what exists before loading the bodies. One monolithic memory
 file becomes unfindable and un-mergeable; small files + an index scale.
@@ -99,75 +99,72 @@ file becomes unfindable and un-mergeable; small files + an index scale.
 **4. Write the read/write protocol into the agent's rules.** In the file your agent
 loads every session, state plainly: *at session start, read the index + the
 relevant files; at session end, write back what changed.* The protocol is what
-makes the brain live — without it you have a folder nobody opens. See
+makes the brain live, without it you have a folder nobody opens. See
 `reference/AGENTS.md`.
 
 **5. Prefer artifacts over chat.** A result that matters gets written to a file in
 the brain, not left in a conversation that evaporates. If it's worth producing,
-it's worth a place to be found again. (Quick lookups stay in chat — don't file
+it's worth a place to be found again. (Quick lookups stay in chat, don't file
 everything; file the things meant to compound.)
 
 **6. Link related memories.** A lightweight `[[other-memory-name]]` link between
-files lets the brain form a graph — an agent reading one fact discovers the
+files lets the brain form a graph, an agent reading one fact discovers the
 related ones. A link to a memory that doesn't exist yet is fine; it marks
 something worth writing later.
 
-**7. Give it a curator (the pulse — see below).** Memory rots without one.
+**7. Give it a curator (see Keeping it healthy).** Memory rots without one.
 
-## The receipts
+## Evidence
 
 From an agent fleet running this as its shared brain in production:
 
-- **The storage layer survived three full execution-model rewrites untouched.**
-  The way the fleet *ran* agents was rebuilt three times; the way
-  it *stored knowledge* never changed. Decoupling memory from execution is why —
-  and it's the single most load-bearing decision here.
+- **Keep memory separate from how agents run.** The storage layer stayed unchanged while the way the agents ran was rebuilt around it several times. That separation is the most important decision here.
 - **One-fact-per-file + an index** out-performed a single large memory file: agents
   find the relevant fact without loading everything, and two agents editing
   different facts don't collide.
-- **Curation is not optional** — without a periodic consolidation pass, duplicates
+- **Curation is not optional**: without a periodic consolidation pass, duplicates
   and stale facts accumulate until the brain actively misleads.
 
 ## What might go wrong
 
 - **The brain rots.** Bites within weeks: duplicate memories, facts that now
   contradict reality, an index that lags the files. Symptom: agents cite things
-  that are no longer true. Prevention is the pulse — a scheduled consolidation
+  that are no longer true. Prevention is a scheduled consolidation
   pass that merges duplicates, fixes stale facts, and prunes. A memory system
   with no curator degrades into a liability.
 - **Stale recall stated as fact.** A memory is a point-in-time snapshot. One that
   names a file, flag, or function may describe a world that has since changed. Rule:
-  treat recalled memory as a lead to verify, not ground truth — check it against
+  treat recalled memory as a lead to verify, not ground truth, check it against
   the live code before acting on it.
 - **The monolith trap.** One giant memory file feels simpler and then becomes
   unsearchable and un-mergeable. Small files + an index from day one.
 - **Storing the derivable.** Memories that restate the code structure, the git
   history, or the ticket are noise that buries the signal. Store only what is not
-  recoverable from the repo itself — the non-obvious.
+  recoverable from the repo itself, the non-obvious.
 - **The folder nobody opens.** If the read/write protocol isn't in the agent's
   standing instructions, the brain exists but never gets read or updated. The
   protocol is the recipe, not the folder.
 
-## The pulse
+## Keeping it healthy
 
 What keeps it alive:
 
 - A **curator** (a human, or a dedicated agent role) runs a periodic consolidation
-  pass: merge duplicates, reconcile stale facts against reality, prune the dead,
+  pass: merge duplicates, reconcile stale facts against reality, prune what is no longer true,
   keep the index honest and the files small.
-- The **write-back-at-session-end habit**, enforced by the agent's rules file, is
+- The **write-back-at-session-end habit**: enforced by the agent's rules file, is
   what feeds the brain. If sessions only read and never write, knowledge stops
   compounding.
-- Keep files **small and current** — a memory file that grows into a history
+- Keep files **small and current**: a memory file that grows into a history
   document should be trimmed to current state; the git history holds the past.
 
 ## The skill
 
-The installable skill and its reference code, in full — copy any file, or grab the whole bundle above. This is what an agent follows to build the pattern in your codebase.
+The skill and its reference code, in full. This is what an agent follows to build the pattern in your codebase. Copy any file here, or get all ten as one kit from [naturate.io/recipes](https://www.naturate.io/recipes?utm_source=agent-recipes&utm_medium=skill#kit).
 
 <SkillFiles slug="shared-agent-memory" />
 
-## Provenance
+## Where this comes from
 
 Abstracted from the shared brain of a production agent fleet. It shares patterns,
 with no source code. The storage discipline is stable and

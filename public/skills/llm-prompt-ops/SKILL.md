@@ -76,9 +76,7 @@ only (steps 2–3, 7) or recommend one — don't block.
   simulating an outage (bad key) — the feature must still respond.
 - No eval layer gates delivery except the deterministic one's auto-repair.
 - Score names are frozen; adding is fine, renaming is a migration.
-- Don't build the LLM-rewrite-on-failure loop first (or at all early): in the
-  origin system it cost 8–12s + ~$0.02 per miss and lost to auto-repair + a
-  recency feed. Ship the cheap layers; measure before adding the expensive one.
+- Don't build the LLM-rewrite-on-failure loop first (or at all early): where it was measured it added 8–12s per miss and did no better than auto-repair plus a feed of recent outputs. Ship the cheap layers; measure before adding the expensive one.
 
 ## Verify before done
 

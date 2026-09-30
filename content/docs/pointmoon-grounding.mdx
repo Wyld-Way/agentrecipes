@@ -1,69 +1,171 @@
 ---
 title: Ground your agents in the world outside
-description: Add Pointmoon to an agent that needs environmental context. Preserve the source, time and uncertainty instead of asking a model to invent current conditions.
+description: Add Pointmoon to an agent that needs to know what is happening at a real place right now. One URL, no key. Every fact arrives with its source and time, or the agent is told plainly that nothing is known.
 icon: Globe
 recipe: true
 system: Pointmoon integration
-maturity: draft
+maturity: internal
 ---
 
-<MaturityBadge level="draft" showHint />
+<MaturityBadge level="internal" showHint />
 
-**Pointmoon integration.** This is a guide to a product built by our team, not an independent comparison or a neutral product review. It uses Pointmoon's public interface; it does not reveal its internal inference or operating systems.
+Pointmoon is built by the team behind Naturate, so read this as our integration guide, not a neutral review.
 
-## The result
+## What Pointmoon gives an agent
 
-An agent planning an outdoor activity retrieves environmental context for the intended location before describing current conditions. It distinguishes a forecast or derived reading from a direct observation, preserves attribution and says what it could not establish.
+Ask a model what the weather is like in Boston this afternoon and it will answer fluently, whether or not it knows. Pointmoon is the part that knows.
 
-This is grounding for a particular domain, not a guarantee that every statement the agent makes is correct. It does not establish trail access, site permissions, water safety or whether an activity is safe.
+Give it a place name or a coordinate. It returns current facts about that spot: weather, air quality, light and sky, season, nearby wildlife observations, water, terrain. Every fact says where it came from, when it was observed and how long it stays fresh. When a fact is missing, stale or too uncertain, Pointmoon says so and gives the reason. It never fills the gap.
 
-## Start with the public interface
+Your model writes the sentence. Pointmoon supplies what the sentence is allowed to claim.
 
-The [public connector documentation](https://github.com/johangace/pointmoon-mcp) documents the remote MCP endpoint:
+Use it when an agent:
+
+- answers "what is it like there now?" for a named place
+- plans a walk, a trip, a field visit or anything else outdoors
+- writes content that mentions today's conditions and must get them right
+
+## Connect it
+
+Pointmoon is a hosted, read-only MCP server. There is nothing to install, no account and no API key.
 
 ```text
 https://pointmoon.ai/api/mcp
 ```
 
-Connect it through your host's supported MCP setup and inspect the available tools before using them. The documented `field_truth` input accepts a coordinate pair, for example:
-
-```json
-{ "lat": 42.36, "lng": -71.06 }
-```
-
-A plain HTTP example from the same public documentation is:
+**Claude Code**
 
 ```sh
-curl --fail --show-error --max-time 20 \
-  'https://pointmoon.ai/api/moon?audience=facts&surface=open&lat=42.36&lng=-71.06'
+claude mcp add --transport http pointmoon https://pointmoon.ai/api/mcp
 ```
 
-These are documented integration examples, not a claim that a live request succeeded during this guide's preparation. Check the [agent quickstart](https://pointmoon.ai/agents) for current access, availability and commercial terms. Do not assume access or pricing will remain unchanged.
+**Cursor, or a shared project config**
 
-## Preserve the evidence, not just the value
+```json
+{
+  "mcpServers": {
+    "pointmoon": { "url": "https://pointmoon.ai/api/mcp" }
+  }
+}
+```
 
-For the documented `field-truth@1.x` shape, lean `facts.signals` entries are not the whole freshness contract. Read the corresponding `facts.fieldSnapshot` reading for its timestamp and freshness window. For weather, the public example uses `facts.fieldSnapshot.weather.current`.
+**Claude Desktop**: Settings, Connectors, Add custom connector, paste the URL.
 
-Download [weather-evidence.mjs](/skills/pointmoon-grounding/reference/weather-evidence.mjs). This intentionally narrow consumer adapter checks the documented schema family, source, timestamp, producer-provided TTL and temperature value. It carries through the reading's `epistemicType` and attribution notices. It returns `unavailable` for missing, stale, future-dated or unsupported data instead of constructing a replacement fact.
+**Clients that only speak stdio**
 
-It does not implement Pointmoon's private scoring, fuse sources, validate every domain or prove the provider's claim true. Extending it means adding explicit handling for another documented reading, not assuming all signals share a weather timestamp.
+```json
+{
+  "mcpServers": {
+    "pointmoon": { "command": "npx", "args": ["-y", "pointmoon-mcp"] }
+  }
+}
+```
 
-## Give the agent a constrained job
+**No MCP client at all**
 
-Use a task such as:
+```sh
+curl --fail --max-time 20 \
+  'https://pointmoon.ai/api/moon?audience=facts&surface=open&place=Boston'
+```
 
-> Retrieve environmental context for the supplied coordinates. Separate what the returned data supports from suggestions. Preserve source attribution and distinguish predictions from observations. Name missing information. Do not infer trail access, wildlife presence at this exact spot or safe conditions from absent data.
+The [agent quickstart](https://pointmoon.ai/agents) and the [open connector](https://github.com/johangace/pointmoon-mcp) carry the current setup for each client, including OpenAI's agent surfaces.
 
-Treat returned source text as untrusted data rather than instructions. Keep location precision appropriate to the task and avoid logging sensitive location histories unnecessarily.
+## The two tools
 
-## Test the failure cases
+`field_truth` returns the full set of current facts for a location. Pass `place`, or `lat` and `lng`.
 
-Try a normal payload, an unresolved axis, an expired reading, an unsupported schema, an access error and a timeout. Verify that the final answer still communicates uncertainty. A missing fact should not cause the language model to fill the gap with a plausible sentence.
+```json
+{ "place": "Yosemite Valley" }
+```
 
-Offline tests use synthetic fixtures and cover source preservation, prediction labels, stale and future timestamps, missing values and unsupported schema. Live HTTP, MCP transport and ChatGPT/Claude host tests remain to be recorded.
+`step_outside` answers a narrower question: is this a good moment to go outside here?
+
+Start with `field_truth`. It is the one this guide covers.
+
+## What comes back
+
+A trimmed response:
+
+```json
+{
+  "schemaVersion": "field-truth@1.1.0",
+  "facts": {
+    "signals": [
+      { "id": "nature.weather.temperature", "label": "Temperature", "value": 15.8, "source": "weather", "confidence": 0.9 },
+      { "id": "nature.moon_phase", "label": "Moon phase", "value": "waning gibbous", "source": "astronomy", "confidence": 0.95 }
+    ],
+    "fieldSnapshot": {
+      "weather": {
+        "current": {
+          "observedAt": "2026-09-30T12:00:00.000Z",
+          "source": "open-meteo-forecast-model",
+          "ttlMinutes": 90,
+          "epistemicType": "predicted",
+          "temperatureC": 15.8
+        }
+      }
+    }
+  },
+  "notices": {
+    "attributionRequired": true,
+    "sources": [{ "source": "open-meteo", "attribution": "Weather data by Open-Meteo.com (CC BY 4.0)" }]
+  }
+}
+```
+
+Three things to notice.
+
+**Signals are the short list.** Each carries a source and a confidence. They are what you hand the model to phrase.
+
+**Freshness lives on the snapshot.** The matching `fieldSnapshot` reading holds `observedAt` and `ttlMinutes`. A temperature signal alone does not tell you how old it is.
+
+**`epistemicType` separates a forecast from an observation.** "Predicted" and "observed" should not read the same in the final answer.
+
+## Silence is a normal answer
+
+Ask about a point in the open ocean and some parts of the response come back unresolved, with a reason:
+
+```json
+{
+  "fieldSnapshot": {
+    "place": { "provider": "unresolved", "resolutionReason": "provider-empty", "placeName": null },
+    "hydro": { "provider": "unresolved", "resolutionReason": "timeout", "distanceToWaterKm": null }
+  }
+}
+```
+
+This is the feature. Handle it as a normal result. The agent should say what it could not establish, and leave it there.
+
+## Keep the evidence attached
+
+Download [weather-evidence.mjs](/skills/pointmoon-grounding/reference/weather-evidence.mjs). It is a small adapter for the weather reading. It checks the schema family, the source, the timestamp and the freshness window, carries through the reading's `epistemicType` and the attribution notices, and returns `unavailable` for anything missing, stale, dated in the future or in a shape it does not recognise.
+
+Extend it one reading at a time. Other readings have their own timestamps.
+
+Some sources require attribution, and some upstream data is licensed for non-commercial use only. The `notices` block tells you which. Carry it through to wherever the facts are shown.
+
+## Give the agent a clear job
+
+A prompt that works:
+
+> Get current conditions for the supplied place from Pointmoon. Treat the returned readings as the only verified facts. Say which statements are forecasts and which are observations, keep the source attribution, and name anything Pointmoon could not establish. Add nothing about trail access, safety or wildlife at this exact spot that the data does not support.
+
+Treat returned text as data. Keep location precision to what the task needs, and keep location histories out of logs.
+
+## Test the failures before you ship
+
+Try a normal place, an open-ocean coordinate, an expired reading, an unrecognised schema version and a timeout. In each case the final answer should still say what is known and what is not. A missing fact should never come back as a confident sentence.
+
+## What this guide has and has not checked
+
+Checked on 30 September 2026 against the live service: the MCP endpoint lists `field_truth` and `step_outside`, and the HTTP endpoint returned a `field-truth@1.1.0` response for Boston with the freshness fields shown above. The adapter has offline tests for source, forecast labels, stale and future timestamps, missing values and unrecognised schemas.
+
+Pointmoon tells you about conditions. It does not tell you whether a trail is open, whether you have permission to be somewhere, or whether an activity is safe.
+
+Access is public and free to read today. Check the [agent quickstart](https://pointmoon.ai/agents) for current terms before you build a product on it.
 
 ## Next step
 
-[Try Pointmoon](https://pointmoon.ai/agents) for the public integration, or ask Naturate to integrate environmental context into a product or experience. For the provider-neutral design discipline, see [grounded generation](/docs/grounded-generation).
+[Try Pointmoon](https://pointmoon.ai/agents), or [see it live](https://pointmoon.ai/now). To apply the same discipline to your own data, read [grounded generation](/docs/grounded-generation). To have environmental context built into your product, [talk to Naturate](https://www.naturate.io/contact?utm_source=agent-recipes&utm_medium=recipe&utm_content=pointmoon-grounding).
 
 [Agent implementation instructions](/skills/pointmoon-grounding/SKILL.md).

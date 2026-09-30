@@ -1,6 +1,6 @@
 ---
 title: "Make an LLM talk about the real world without making things up"
-description: "Your LLM describes something real — the weather, a location, live data — and lies with total confidence. Here's the discipline where the model only ever phrases facts a data layer actually asserts: every fact carries provenance, unsourced and stale claims are stripped, and when there's nothing solid it says nothing instead of inventing."
+description: "Your LLM describes something real, the weather, a location, live data, and lies with total confidence. Here's the discipline where the model only ever phrases facts a data layer actually asserts: every fact carries provenance, unsourced and stale claims are stripped, and when there's nothing solid it says nothing instead of inventing."
 icon: ShieldCheck
 recipe: true
 system: "grounded generation"
@@ -9,19 +9,19 @@ steps:
   - name: "Provenance or it doesn't ship"
     text: "Every fact the data layer emits carries { source, observedAt, confidence }. A value missing any of these is not passed to the model. Provenance is a hard gate, not metadata."
   - name: "Block the cardinal sin: high confidence with no source"
-    text: "A claim asserting strong confidence (e.g. ≥ 0.7) with no source is structurally impossible — it's a hallucination wearing a confidence score. Detect and drop it. See reference/grounding-gate.ts."
+    text: "A claim asserting strong confidence (for example 0.7 or above) with no source is structurally impossible. It's a hallucination wearing a confidence score. Detect and drop it. See reference/grounding-gate.ts."
   - name: "Make silence a typed, first-class response"
-    text: "Absence is a shape, not a failure: { silent: true, reason } (source-offline, stale, low-confidence, thin-data, no-signal). The rendering layer must handle silence deliberately — never invent to fill the hole, never 5xx."
+    text: "Absence is a shape, not a failure: { silent: true, reason } (source-offline, stale, low-confidence, thin-data, no-signal). The rendering layer must handle silence deliberately, never invent to fill the hole, never 5xx."
   - name: "Strip stale facts before the model sees them"
-    text: "Each fact declares a freshness window (TTL); the producer owns it. Anything older is removed from what the model is given — it can't speak what it never received. Conservative default TTL so unknown sources aren't spoken as fresh."
+    text: "Each fact declares a freshness window (TTL); the producer owns it. Anything older is removed from what the model is given. It can't speak what it never received. Conservative default TTL so unknown sources aren't spoken as fresh."
   - name: "The model phrases, quality-gates catch leaks"
     text: "Feed the model only sourced+fresh facts and instruct it to phrase, not add. Then run cheap deterministic gates on its output that catch the render layer undoing the discipline: raw null/placeholder strings, internal vocabulary leaking through, generic template fallbacks, and internal inconsistency (a field that contradicts another). Score the packet; a serious violation is a visible drop."
   - name: "Degrade to silence, never fabricate"
-    text: "On timeout, thin data, or a source down, serve silence-with-reason for that axis — not stale data, not a guess. Wrap flaky sources in a circuit breaker (open after N consecutive failures, cool down, probe) so a struggling upstream fails to silence, fast."
+    text: "On timeout, thin data, or a source down, serve silence-with-reason for that axis, not stale data, not a guess. Wrap flaky sources in a circuit breaker (open after N consecutive failures, cool down, probe) so a struggling upstream fails to silence, fast."
   - name: "Fix accuracy from evidence, not anecdotes (the replay loop)"
-    text: "When someone reports \"this felt wrong,\" do not hand-patch from the anecdote — that way lies a spiral of contradictory local fixes. Instead: snapshot the raw data behind every generation; to investigate, replay that historical snapshot, grade it against your current rules, and if a rule is new, grade the whole population to find every similar case. Fix once, systematically. See reference/grounding-gate.ts for the grade primitive."
+    text: "When someone reports \"this felt wrong,\" do not hand-patch from the anecdote, that way lies a spiral of contradictory local fixes. Instead: snapshot the raw data behind every generation; to investigate, replay that historical snapshot, grade it against your current rules, and if a rule is new, grade the whole population to find every similar case. Fix once, systematically. See reference/grounding-gate.ts for the grade primitive."
   - name: "Measure grounding, count silence as integrity"
-    text: "A single number: grounding = (grounded + silent) / (grounded + silent + violations). Silence counts toward integrity, not against it — a system that correctly says nothing is being honest. Only violations (unsourced, stale, or cardinal) score against you."
+    text: "A single number: grounding = (grounded + silent) / (grounded + silent + violations). Silence counts toward integrity, not against it, a system that correctly says nothing is being honest. Only violations (unsourced, stale, or confident without a source) score against you."
 ---
 
 <div className="not-prose my-6 rounded-lg border bg-fd-card p-4 text-sm">
@@ -36,32 +36,32 @@ steps:
 
 ## The problem
 
-Your feature has an LLM describe something real — the weather, a location, a
+Your feature has an LLM describe something real, the weather, a location, a
 user's data, live conditions, anything with a ground truth. And it lies with total
 confidence. It says it's clear when it's raining. It names a thing that isn't
 there. It states last week's number as today's. It fills a gap with a plausible
 invention rather than admitting it doesn't know. Anywhere the model touches real
-facts, you can't trust what it says — and you can't ship that.
+facts, you can't trust what it says, and you can't ship that.
 
 ## What you get
 
 A discipline where the model only ever phrases facts a data layer actually
 asserts, and everything else is caught or silenced:
 
-- **Every fact carries its provenance** — source, timestamp, confidence — or it
+- **Every fact carries its provenance**: source, timestamp, confidence, or it
   never reaches the model.
 - **The model phrases; it never asserts.** It rewords what the data gave it;
   invented specifics get stripped before they reach the user.
-- **When there's nothing solid, it says nothing** — silence is a real, first-class
+- **When there's nothing solid, it says nothing**: silence is a real, first-class
   answer with a reason, not an error and not a fabrication.
-- **Stale facts don't leak** — anything past its freshness window is dropped, not
+- **Stale facts don't leak**: anything past its freshness window is dropped, not
   spoken as current.
-- **Accuracy fixes come from evidence, not anecdotes** — so you stop chasing your
+- **Accuracy fixes come from evidence, not anecdotes**: so you stop chasing your
   tail on one-off complaints.
 
 ## Use when / skip when
 
-**Use when** an LLM speaks about facts with a ground truth a user could check —
+**Use when** an LLM speaks about facts with a ground truth a user could check,
 weather, place, prices, inventory, health, live data, anything real. The cost of a
 confident wrong statement is high.
 
@@ -72,7 +72,7 @@ claims about the world.
 ## Ingredients
 
 - A **data/sensing layer** that returns facts as structured values with
-  `{ source, observedAt, confidence }` — not prose. BYO — your APIs, your data.
+  `{ source, observedAt, confidence }`, not prose. BYO, your APIs, your data.
 - An LLM used strictly as a **phraser** over those facts.
 - A place to record **per-claim outcomes** for the replay loop (a table, a log).
 
@@ -82,19 +82,19 @@ claims about the world.
 `{ source, observedAt, confidence }`. A value missing any of these is not passed to
 the model. Provenance is a hard gate, not metadata.
 
-**2. Block the cardinal sin: high confidence with no source.** A claim asserting
-strong confidence (e.g. ≥ 0.7) with no source is structurally impossible — it's a
+**2. Block confident claims that have no source.** A claim asserting
+strong confidence (for example 0.7 or above) with no source is structurally impossible. It's a
 hallucination wearing a confidence score. Detect and drop it. See
 `reference/grounding-gate.ts`.
 
 **3. Make silence a typed, first-class response.** Absence is a shape, not a
 failure: `{ silent: true, reason }` (source-offline, stale, low-confidence,
-thin-data, no-signal). The rendering layer must handle silence deliberately —
+thin-data, no-signal). The rendering layer must handle silence deliberately,
 never invent to fill the hole, never 5xx.
 
 **4. Strip stale facts before the model sees them.** Each fact declares a freshness
 window (TTL); the producer owns it. Anything older is removed from what the model
-is given — it can't speak what it never received. Conservative default TTL so
+is given. It can't speak what it never received. Conservative default TTL so
 unknown sources aren't spoken as fresh.
 
 **5. The model phrases, quality-gates catch leaks.** Feed the model only
@@ -105,12 +105,12 @@ generic template fallbacks, and internal inconsistency (a field that contradicts
 another). Score the packet; a serious violation is a visible drop.
 
 **6. Degrade to silence, never fabricate.** On timeout, thin data, or a source
-down, serve silence-with-reason for that axis — not stale data, not a guess. Wrap
+down, serve silence-with-reason for that axis, not stale data, not a guess. Wrap
 flaky sources in a circuit breaker (open after N consecutive failures, cool down,
 probe) so a struggling upstream fails to silence, fast.
 
 **7. Fix accuracy from evidence, not anecdotes (the replay loop).** When someone
-reports "this felt wrong," do not hand-patch from the anecdote — that way lies a
+reports "this felt wrong," do not hand-patch from the anecdote, that way lies a
 spiral of contradictory local fixes. Instead: snapshot the raw data behind every
 generation; to investigate, replay that historical snapshot, grade it against your
 current rules, and if a rule is new, grade the whole population to find every
@@ -119,32 +119,31 @@ grade primitive.
 
 **8. Measure grounding, count silence as integrity.** A single number:
 `grounding = (grounded + silent) / (grounded + silent + violations)`. Silence
-counts toward integrity, not against it — a system that correctly says nothing is
-being honest. Only violations (unsourced, stale, or cardinal) score against you.
+counts toward integrity, not against it, a system that correctly says nothing is
+being honest. Only violations (unsourced, stale, or confident without a source) score against you.
 
-## The receipts
+## Evidence
 
 From a production sensing engine running this discipline:
 
 | Claim | Number |
 |---|---|
-| Cardinal-sin threshold (confidence with no source) | ≥ 0.7 → blocked |
-| Freshness windows | fast-moving facts ~90 min; slow/computed ~1 day; conservative default so unknowns aren't spoken as fresh |
-| Circuit breaker | opens after ~4 consecutive failures, ~60s cooldown, then one probe |
+| Confident claim with no source | blocked above a set cutoff, for example 0.7 |
+| Freshness windows | set per kind of fact, for example minutes to hours for fast-moving readings and about a day for slow or computed ones, with a conservative default so unknowns aren't spoken as fresh |
+| Circuit breaker | opens after a few consecutive failures, cools down for about a minute, then sends one probe |
 | Grounding metric | (grounded + silent) / (grounded + silent + violations); silence is integrity |
 | Quality gate | per-output score 0–100; one serious violation is a visible drop |
-| Honesty over reach | a real clamp: an upstream reported 30+ km visibility, clamped to the sensor's real 16 km ceiling — under-claim rather than over-claim |
+| Honesty over reach | when an upstream reports a value beyond what its sensor can measure, clamp it to the sensor's real ceiling. Under-claim rather than over-claim |
 
 ## What might go wrong
 
 - **The anecdote spiral (the big one).** Bites the moment you fix accuracy from
   individual complaints: each patch is a local hack, the patches contradict each
   other, and nobody ever checks whether the underlying signal is right. Months in,
-  your rules are a museum of one-off fixes. Prevention is step 7 — replay and grade
+  your rules are a pile of one-off fixes. Prevention is step 7, replay and grade
   against the population; let evidence drive fixes, never a single report.
 - **Confidence theater.** A model emits a confidence score it didn't earn. Bites
-  when confidence is decorative rather than gated to a source. The cardinal-sin
-  check (step 2) is the guard.
+  when confidence is decorative rather than gated to a source. The check in step 2 is the guard.
 - **The render layer undoes the grounding.** The data layer is clean, then the
   final phrasing step invents or contradicts. Bites silently. The output quality
   gates (step 5) are there because the leak happens at the very end.
@@ -152,28 +151,28 @@ From a production sensing engine running this discipline:
   a default, you've turned honesty into either an outage or a lie. Silence must be
   a designed, typed response.
 - **Tuning a threshold instead of demoting.** When a claim class's confidence stops
-  correlating with reality, the fix is not to nudge the number — it's to demote
+  correlating with reality, the fix is not to nudge the number. It's to demote
   that class to silence until the signal earns its confidence back.
 
-## The pulse
+## Keeping it healthy
 
 - A **calibration audit** on a cadence: sample claims across contexts, check
   declared confidence against ground truth; a class that's meaningfully off its
   promise is a bug, and the fix is demotion to silence, not a threshold nudge.
 - **Every numeric threshold lives in a registry** with where it came from and when
-  it was last reviewed — no magic numbers buried in code.
+  it was last reviewed, no magic numbers buried in code.
 - The **replay archive** keeps the raw data behind every generation, so any future
   rule can be graded against the past.
 
 ## The skill
 
-The installable skill and its reference code, in full — copy any file, or grab the whole bundle above. This is what an agent follows to build the pattern in your codebase.
+The skill and its reference code, in full. This is what an agent follows to build the pattern in your codebase. Copy any file here, or get all ten as one kit from [naturate.io/recipes](https://www.naturate.io/recipes?utm_source=agent-recipes&utm_medium=skill#kit).
 
 <SkillFiles slug="grounded-generation" />
 
-## Provenance
+## Where this comes from
 
-Abstracted mid-2026 from a production field-sensing engine whose whole purpose is
-to speak about the physical world without inventing it — its founding principle is
+Abstracted from a production field-sensing engine whose whole purpose is
+to speak about the physical world without inventing it, its founding principle is
 that silence is a capability, not a fallback, and trust comes from restraint as
 much as accuracy. It shares patterns, with no source code.
