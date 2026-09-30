@@ -22,7 +22,7 @@ export function SkillDownload({ slug }: { slug: string }) {
   if (!entry || entry.files.length === 0) return null;
   return <div className="not-prose my-6 rounded-lg border bg-fd-card p-4">
     <div className="flex flex-wrap items-center justify-between gap-3">
-      <div><p className="text-sm font-semibold">Try this recipe in your own project</p><p className="mt-1 text-xs text-fd-muted-foreground">Read the files below first. The download for all ten recipes asks for your email.</p></div>
+      <div><p className="text-sm font-semibold">Try this recipe in your own project</p><p className="mt-1 text-xs text-fd-muted-foreground">Read the files below first. The download for the whole kit asks for your email.</p></div>
       <a href={kitUrl('download', slug)} className="rounded-md bg-fd-primary px-3 py-2 text-sm font-medium text-fd-primary-foreground">Get the kit (.zip)</a>
     </div>
     <ul className="mt-4 divide-y divide-fd-border rounded-md border">

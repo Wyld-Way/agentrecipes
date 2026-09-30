@@ -4,10 +4,10 @@ description: Turn a small queue into reviewable drafts on a schedule. Bound the 
 icon: Workflow
 recipe: true
 system: Scoped autonomous operations
-maturity: draft
+maturity: internal
 ---
 
-<MaturityBadge level="draft" showHint />
+<MaturityBadge level="internal" showHint />
 
 ## The result
 
@@ -42,6 +42,22 @@ Download [queue.mjs](/skills/scoped-autonomous-operations/reference/queue.mjs). 
 **6. Add a simple external check.** Compare the last completed run with the expected schedule and report a missed deadline. Monitor the delivered drafts as well as job execution. A process can run successfully and still produce nothing useful.
 
 **7. Improve from human decisions.** Track accepted drafts, correction effort and rejected suggestions. Change the workflow only when that evidence identifies a specific problem. Do not respond to poor output by adding more agents automatically.
+
+## What running one every day taught us
+
+These points come from a daily reconciliation run that has kept several projects' notes and task boards current.
+
+**Check cheaply before reading anything.** Ask what changed since the last run. Read only those changes. A run that rereads everything every day costs the most on the days it has the least to do.
+
+**Stay quiet when there is nothing to act on.** A daily message that says "nothing to report" teaches people to ignore the desk. Silence on a quiet day is the correct output, and the completion record still shows the run happened.
+
+**Write the boundary as two lists.** What the run may do alone: reconcile notes, check that work marked done has evidence, merge a ready internal change after its required checks. What it never does: merge product changes or deploy. The second list matters more.
+
+**The desk is the backstop.** Whoever does a piece of work records it when they finish. The daily run catches what was missed and reconciles conflicts. If the desk is the only thing keeping records current, the records are a day old.
+
+**Give the run a name and a time.** A named heartbeat at a fixed hour makes a missed run visible as an absence. Pair it with the external check in step 6.
+
+**Check claims against evidence.** "Done" with no commit, file or link behind it goes back as open. This is the most useful thing the desk does.
 
 ## Failure rehearsal
 

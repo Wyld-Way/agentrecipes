@@ -53,3 +53,15 @@ test('admin: preview binds the exact approved version and requires server permis
   assert.throws(() => applyApprovedChange(record, { ...p, title: 'Unapproved title' }, ctx));
   assert.throws(() => applyApprovedChange(record, p, { ...ctx, approvedDigest: 'wrong' }));
 });
+
+test('release check: only the validated commit on production passes', async () => {
+  const { checkRelease } = await import('../public/skills/agent-safe-releases/reference/verify-release.mjs');
+  const sha = 'a1b2c3d4e5f60718293a4b5c6d7e8f9012345678';
+  assert.equal(checkRelease({ environment: 'production', commit: sha }, sha).ok, true);
+  assert.equal(checkRelease({ environment: 'production', commit: sha }, 'a1b2c3d').ok, true);
+  assert.equal(checkRelease({ environment: 'production', commit: sha }, 'ffffffff').ok, false);
+  assert.match(checkRelease({ environment: 'preview', commit: sha }, sha).reason, /preview/);
+  assert.equal(checkRelease({ environment: 'production' }, sha).ok, false);
+  assert.equal(checkRelease({ environment: 'production', commit: sha }, '').ok, false);
+  assert.equal(checkRelease(null, sha).ok, false);
+});

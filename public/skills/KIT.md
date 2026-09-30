@@ -1,6 +1,6 @@
 # Agent Recipes kit, by Naturate
 
-Ten AI build patterns. Each folder holds a `SKILL.md` your coding agent can follow and
+Twelve AI build patterns. Each folder holds a `SKILL.md` your coding agent can follow and
 small reference files you can read in a few minutes.
 
 ## How to use it
@@ -29,6 +29,8 @@ its own.
 | voice-ai-pipeline | Start AI voice playback in seconds |
 | shared-agent-memory | Give agents a memory that survives every session |
 | agent-worker-fleet | Run several agents on real work unattended |
+| two-agents-one-repo | Run two coding agents in one repository without losing work |
+| agent-safe-releases | Let agents ship without breaking production |
 
 ## Want it built with you?
 
