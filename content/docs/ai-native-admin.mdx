@@ -4,10 +4,10 @@ description: Give people a clear review surface and agents a small set of typed 
 icon: PanelsTopLeft
 recipe: true
 system: AI-native admin
-maturity: draft
+maturity: internal
 ---
 
-<MaturityBadge level="draft" showHint />
+<MaturityBadge level="internal" showHint />
 
 ## The result
 
@@ -40,6 +40,28 @@ This is a contract demonstration, not a complete authentication or database impl
 **5. Commit atomically.** Check the expected record version again inside the transaction. Persist an idempotency key with the result, so a retry returns the previous result instead of applying twice. The supplied pure-function example intentionally does not implement transactions or durable idempotency.
 
 **6. Keep an audit and recovery path.** Record actor, proposal, before/after state and result with sensible retention. Provide undo where the operation supports it. Authorization must be checked on both the tool route and ordinary web route.
+
+## What running one for non-technical authors taught us
+
+The contract above is the skeleton. These rules come from a content studio where people who do not write code edit structured material with an assistant.
+
+**The assistant never accepts its own proposal.** It proposes; the author keeps or drops. It records a decision only when the author has said keep, drop or undo in their own words.
+
+**Every proposal carries the revision it was written against.** Opening a record returns a revision. A proposal names that revision, a one-line summary in plain words and the exact fields it touches. A proposal against an old revision is refused.
+
+**Group related changes.** Five edits that serve one intention are one proposal, kept or dropped together. The author reviews intentions, not field updates.
+
+**A direct edit is attributed to the person who asked.** When the author dictates a change, it is applied as theirs. When the assistant suggests one, it stays a proposal.
+
+**Hide the machinery.** The author never sees identifiers, branches or raw data. The assistant says "the lesson" and "a note for the adult", not the field name.
+
+**Some text is protected.** Lines marked as the owner's own words cannot be edited by the assistant. It may add an alternative beside them.
+
+**Three words mean three different things.** Checks passing means the shape is right. Read means a person marked it read. Published means the owner approved it. The assistant must not use one for another.
+
+**Say what the tools cannot do.** When a request needs something the tools do not support, the assistant offers unsaved draft text and says plainly that it is not saved.
+
+**Separate a broken tool from a broken record.** When a check fails because of the application and not the content, say that, so the author does not try to fix their writing.
 
 ## Choose the right surface
 

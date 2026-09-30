@@ -12,7 +12,8 @@
     "voice-ai-pipeline",
     "shared-agent-memory",
     "agent-worker-fleet",
-    "growth-loop-mechanics",
+    "two-agents-one-repo",
+    "agent-safe-releases",
     "format"
   ]
 }

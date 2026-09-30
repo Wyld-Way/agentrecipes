@@ -1,0 +1,86 @@
+---
+title: Run two coding agents in one repository without losing work
+description: Two agents, or an agent and a person, working the same repository will overwrite each other unless each has its own working tree. Here is the setup that keeps everyone's work, and how to get work back when it is lost anyway.
+icon: GitBranch
+recipe: true
+system: Two agents, one repository
+maturity: internal
+---
+
+<MaturityBadge level="internal" showHint />
+
+## The result
+
+Several coding agents, and the people working beside them, change the same repository on the same day. Nobody's uncommitted work disappears, nobody ships a half-finished file that belonged to someone else, and nobody builds the same fix twice.
+
+## Use this when
+
+More than one session touches a repository at a time. That includes two agents from different vendors, one agent running in several windows, and an agent working while you edit by hand.
+
+Skip it when a single session owns the repository from start to finish.
+
+## How work gets lost
+
+Each of these has happened on a real project. None of them looks like a collision while it is happening.
+
+- **A shared checkout.** One session runs a rebase, reset or clean. Another session's uncommitted files in the same directory are gone.
+- **A swept file.** An agent stages a whole file that also held someone else's unfinished change. The commit ships an import for a file that exists only on one laptop. The local build passes and the remote build fails.
+- **A shared stash.** The stash belongs to the repository, not to a working tree. One agent's `stash pop` takes another agent's stash.
+- **The same ticket, twice.** Two agents build the same fix an hour apart. The second pull request is dead the moment the first merges.
+- **A stale checkout read as the truth.** A working copy that is behind the remote looks exactly like a deletion. An agent reports the file missing and rewrites it from a guess.
+- **Borrowed dependencies.** A working tree whose dependencies are symlinked from another checkout reports type errors and missing modules that are not in the code.
+- **Shared local state.** Two local servers share a browser's cookies, so a test runs signed in as the wrong user. An environment file that exists in one tree and not another makes a feature look deleted.
+
+## The setup
+
+**1. One owner per working tree.** Every session gets its own `git worktree`, created from the current remote branch. The trees share history and nothing else. A rebase in one cannot touch files in another.
+
+```sh
+git fetch origin
+git worktree add -b fix-login ../repo-fix-login origin/main
+```
+
+**2. Give each tree a real install.** Run the install in the tree, under the runtime version the project pins. Do not symlink dependencies from another checkout. When a check fails, run it on the untouched base in the same tree. Red there too means the tree is wrong, not your change.
+
+**3. Look before you start.** List open pull requests and the last commits on the main branch. An open branch that names your ticket means it is taken.
+
+```sh
+gh pr list --state open --json number,title,headRefName
+git log origin/main --oneline -15
+```
+
+**4. Stage by path, and read what you staged.** Never stage everything. Read the diff of each file before adding it. If it shows a change you did not make, stop. After the commit, read the commit's own diff once.
+
+**5. No stash across parallel trees.** Commit the work, or save a snapshot under a private ref. Download [rescue-snapshot.sh](/skills/two-agents-one-repo/reference/rescue-snapshot.sh) for a small script that does this without touching the working tree.
+
+**6. Leave a shared dirty checkout alone.** If a checkout holds someone else's uncommitted changes, do not rebase it, switch its branch, clean it or stash in it. Do your reconciling in a fresh tree.
+
+**7. Ask the remote, not the folder.** Before calling anything missing, fetch and look at the remote branch. Before calling a feature removed, compare the names of the environment keys across the trees.
+
+**8. Separate local state.** Give each tree's server its own port and its own session secret, so a cookie from one cannot sign a test into another.
+
+**9. When you have duplicated, compare honestly.** Keep the better implementation and close the other. Leave a note naming anything the discarded one did better. Do not edit code the other agent shipped minutes ago; they may still be working on it.
+
+**10. Make the rule mechanical.** A convention that every session must remember will be forgotten. Put the check where it cannot be skipped: a hook that refuses a blanket stage, or a launcher that always opens a fresh tree. Download [worktree-preflight.sh](/skills/two-agents-one-repo/reference/worktree-preflight.sh) for the checks in steps 3 and 6 as one command.
+
+## Getting lost work back
+
+Anything that was staged, even once, is still in the repository as an unreachable object.
+
+```sh
+git fsck --lost-found
+```
+
+New files come back as loose blobs; read each with `git cat-file -p` and match by content. Edits to tracked files that were swept up by an automatic stash come back as unreachable commits; restore them with `git checkout <commit> -- <path>`.
+
+Work that was never staged is gone. That is the reason for step 5.
+
+## Test it
+
+In a scratch repository, open two trees. In the first, leave an uncommitted edit and an unstaged new file. In the second, rebase, reset hard and clean. The first tree must be unchanged. Then run the preflight script in a checkout that holds another session's changes; it must refuse.
+
+## Evidence
+
+This comes from projects where several agents and a person worked the same repositories daily. Every failure in the list above happened at least once, several more than once, before the setup held. The scripts have been run by hand in a scratch repository. They are small enough to read before you trust them.
+
+[Agent implementation instructions](/skills/two-agents-one-repo/SKILL.md).

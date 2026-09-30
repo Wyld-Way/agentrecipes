@@ -1,44 +1,36 @@
 ---
 title: "Make an AI voice feature start playing in seconds, not after a long wait"
-description: "You hand LLM-generated narration to a text-to-speech provider and users stare at a loading spinner for tens of seconds before anything plays — or you reach for a faster voice model and it drops your pauses, mispronounces markup, or wanders accent mid-clip. Here's the pipeline that streams audio starting in seconds, keeps pauses and loudness consistent across voice tiers, and degrades gracefully instead of hanging."
+description: "You hand LLM-generated narration to a text-to-speech provider and users stare at a loading spinner for tens of seconds before anything plays, or you reach for a faster voice model and it drops your pauses, mispronounces markup, or wanders accent mid-clip. Here's the pipeline that streams audio starting in seconds, keeps pauses and loudness consistent across voice tiers, and degrades gracefully instead of hanging."
 icon: AudioLines
 recipe: true
 system: "voice AI pipeline"
 maturity: internal
 steps:
   - name: "Pick your delivery shape before you touch a provider"
-    text: "Three shapes exist: plain batch (generate everything, upload once, hand back one URL); progressive multi-track (return after the first chunk, keep synthesizing and uploading the rest in the background, the player drains chunks gaplessly); and a true bytestream (proxy the provider's own audio stream straight to the client). Pick progressive if your client already has — or can cheaply build — a gapless multi-track queue: it captures most of the latency win without a client audio-engine rewrite, and it degrades to plain batch trivially."
+    text: "Three shapes exist: plain batch (generate everything, upload once, hand back one URL); progressive multi-track (return after the first chunk, keep synthesizing and uploading the rest in the background, the player drains chunks gaplessly); and a true bytestream (proxy the provider's own audio stream straight to the client). Pick progressive if your client already has, or can cheaply build, a gapless multi-track queue: it captures most of the latency win without a client audio-engine rewrite, and it degrades to plain batch trivially."
   - name: "Split the script into synthesis chunks at its natural seams, not by size alone"
-    text: "Break at author-placed pause markers first. Both extremes are wrong: too few chunks and one slow chunk (usually the last) sits on the critical path of the whole request; too many chunks and the tail becomes a queue of stragglers that blows your latency budget once real per-request round-trip overhead dominates. Tune target chunk size empirically against the SPECIFIC tier's measured per-request latency — a size that's right for a fast tier is wrong for a slow one."
+    text: "Break at author-placed pause markers first. Both extremes are wrong: too few chunks and one slow chunk (usually the last) sits on the critical path of the whole request; too many chunks and the tail becomes a queue of stragglers that blows your latency budget once real per-request round-trip overhead dominates. Tune target chunk size empirically against the specific tier's measured per-request latency, a size that's right for a fast tier is wrong for a slow one."
   - name: "Preserve authored pauses as real silence, translated per model tier"
-    text: "A pause marker in your source script must survive to a real gap in the audio. Expressive/high-quality model tiers often only honor inline pause CUES (a \"[short pause]\"/\"[long pause]\"-style tag) and will otherwise run straight through or mis-render a literal pause syntax; fast/cheap tiers often honor literal pause syntax natively. Classify pauses by depth: small in-line pauses can ride as whatever native syntax that specific tier understands; the deepest, author-marked holds should become REAL reinjected silence at a chunk boundary — synthesize a silent clip and splice it in — so a model that doesn't understand your pause syntax can never swallow it. See reference/chunk-and-pace.ts."
+    text: "A pause marker in your source script must survive to a real gap in the audio. Expressive/high-quality model tiers often only honor inline pause cues (a \"[short pause]\"/\"[long pause]\"-style tag) and will otherwise run straight through or mis-render a literal pause syntax; fast/cheap tiers often honor literal pause syntax natively. Classify pauses by depth: small in-line pauses can ride as whatever native syntax that specific tier understands; the deepest, author-marked holds should become real reinjected silence at a chunk boundary, synthesize a silent clip and splice it in, so a model that doesn't understand your pause syntax can never swallow it. See reference/chunk-and-pace.ts."
   - name: "Tier your voice model to the surface, and respect the concurrency ceiling as the real constraint"
-    text: "Give the at-tap/interactive path (someone actively waiting) the fast/cheap tier; reserve the expensive, most expressive tier for anything you can pre-generate ahead of need, so its slower per-request cost never sits on a human's critical path. The provider's concurrency ceiling is usually account-wide — shared across every concurrent user AND any background pre-generation — so treat it as a semaphore your dispatcher must respect, and make a rate-limit response retry with backoff rather than fail the whole generation; a single 429 shouldn't dump an entire piece to the fallback tier."
+    text: "Give the at-tap/interactive path (someone actively waiting) the fast/cheap tier; reserve the expensive, most expressive tier for anything you can pre-generate ahead of need, so its slower per-request cost never sits on a human's critical path. The provider's concurrency ceiling is usually account-wide, shared across every concurrent user and any background pre-generation, so treat it as a semaphore your dispatcher must respect, and make a rate-limit response retry with backoff rather than fail the whole generation; a single 429 shouldn't dump an entire piece to the fallback tier."
   - name: "Give every synthesis request its own strongly-referenced timeout, chained to a caller-level abort"
-    text: "A composite/derived abort signal built from a caller signal plus a timeout, with nothing holding the timeout strongly, can silently fail to fire in some runtimes — the request just hangs. Use an explicit timer you hold directly and clear in a finally, so a hung request always actually dies and frees its concurrency slot. One request stuck open starves every other concurrent user of that shared quota."
+    text: "A composite/derived abort signal built from a caller signal plus a timeout, with nothing holding the timeout strongly, can silently fail to fire in some runtimes, the request just hangs. Use an explicit timer you hold directly and clear in a finally, so a hung request always actually dies and frees its concurrency slot. One request stuck open starves every other concurrent user of that shared quota."
   - name: "Concatenate by re-encoding, never by raw byte-copy"
-    text: "Splicing compressed audio chunks (and any reinjected silence) together with a raw byte-copy is fast, but it leaves either wrong duration metadata (a player's progress bar reads only the first chunk's header) or audible micro-glitches at seams where frame boundaries don't align. Re-encode through the format's real encoder in the same pass — still well under a second for a multi-minute piece — and you get one continuous, gapless file with correct metadata."
+    text: "Splicing compressed audio chunks (and any reinjected silence) together with a raw byte-copy is fast, but it leaves either wrong duration metadata (a player's progress bar reads only the first chunk's header) or audible micro-glitches at seams where frame boundaries don't align. Re-encode through the format's real encoder in the same pass, still well under a second for a multi-minute piece, and you get one continuous, gapless file with correct metadata."
   - name: "Normalize loudness in the same encoding pass"
-    text: "Fold a loudness-normalization filter into step 6's re-encode (one filter pass, no added latency) targeting a standard loudness level with a true-peak ceiling, so every generated piece sounds the same volume regardless of voice, model tier, or generation date — instead of drifting piece to piece."
+    text: "Fold a loudness-normalization filter into step 6's re-encode (one filter pass, no added latency) targeting a standard loudness level with a true-peak ceiling, so every generated piece sounds the same volume regardless of voice, model tier, or generation date, instead of drifting piece to piece."
   - name: "Build the failure ladder before you ship, and detect every rung"
-    text: "Name every point that can fail — upstream text generation stalls, TTS fails to connect, TTS returns no audio within budget, a mid-stream error — and give each a wall-clock detection budget and a fallback action. The last rung is always a plain batch/fallback path that already works, never new code written just for the failure case. A tier that's higher quality in the demo but empirically breaks your latency budget on the interactive path isn't a bug to patch — it's a signal to keep it pre-generate-only until proven otherwise."
+    text: "Name every point that can fail, upstream text generation stalls, TTS fails to connect, TTS returns no audio within budget, a mid-stream error, and give each a wall-clock detection budget and a fallback action. The last rung is always a plain batch/fallback path that already works, never new code written just for the failure case. A tier that's higher quality in the demo but empirically breaks your latency budget on the interactive path isn't a bug to patch. It's a signal to keep it pre-generate-only until proven otherwise."
   - name: "Instrument the seams, not just the total"
-    text: "Log time-to-first-audio-byte, per-chunk synthesis time, total stream duration, and which fallback rung (if any) fired, per generation. A single \"it took 20 seconds\" number can't tell you whether the slow part was upstream generation, the TTS round-trip, or concatenation — and you need that breakdown to tune step 2's chunk size against reality instead of guessing."
+    text: "Log time-to-first-audio-byte, per-chunk synthesis time, total stream duration, and which fallback rung (if any) fired, per generation. A single \"it took 20 seconds\" number can't tell you whether the slow part was upstream generation, the TTS round-trip, or concatenation, and you need that breakdown to tune step 2's chunk size against reality instead of guessing."
 ---
-
-<p className="-mt-2 text-fd-muted-foreground">
-  Recipe: <strong className="text-fd-foreground">voice AI pipeline</strong>
-</p>
 
 <div className="not-prose my-6 rounded-lg border bg-fd-card p-4 text-sm">
   <div className="mb-2"><MaturityBadge level="internal" showHint /></div>
   <dl className="grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1 text-fd-muted-foreground">
     <dt className="font-medium text-fd-foreground">System</dt><dd>voice AI pipeline (progressive/streaming TTS)</dd>
-    <dt className="font-medium text-fd-foreground">Slug</dt><dd>voice-ai-pipeline</dd>
-    <dt className="font-medium text-fd-foreground">Version</dt><dd>0.1</dd>
     <dt className="font-medium text-fd-foreground">Origin</dt><dd>Abstracted from a production voice pipeline that streams AI-authored narration as audio.</dd>
-    <dt className="font-medium text-fd-foreground">Consumers</dt><dd>origin voice pipeline</dd>
-    <dt className="font-medium text-fd-foreground">License</dt><dd>CC-BY-SA-4.0 on publish</dd>
   </dl>
 </div>
 
@@ -46,8 +38,8 @@ steps:
 
 ## The problem
 
-You generate narration with an LLM — a guided script, a narrated report, a
-voice reply — and hand the text to a text-to-speech provider. In the obvious
+You generate narration with an LLM, a guided script, a narrated report, a
+voice reply, and hand the text to a text-to-speech provider. In the obvious
 implementation, the user stares at a loading spinner for tens of seconds
 before anything plays, because you wait for the whole piece to synthesize
 before you send back a single byte. Reach for a faster voice model and it
@@ -59,17 +51,17 @@ finished audio's loudness drifts from one generation to the next.
 
 ## What you get
 
-- **Users hear the first words in seconds**, not tens of seconds — audio
+- **Users hear the first words in seconds**: not tens of seconds, audio
   starts arriving before the rest of the piece has even finished synthesizing.
-- **A speed/quality dial per surface** — a fast, cheap voice tier for the
+- **A speed/quality dial per surface**: a fast, cheap voice tier for the
   moment someone is actively waiting, and a slower, higher-quality tier for
   anything you can prepare ahead of time.
-- **Authored pauses survive the trip through the model**, faithfully, no
+- **Authored pauses survive the trip through the model**: faithfully, no
   matter which voice tier is doing the talking.
-- **Every finished piece has the same perceived loudness**, regardless of
+- **Every finished piece has the same perceived loudness**: regardless of
   voice, model tier, or day it was generated.
 - **The pipeline degrades gracefully** to a slower, already-proven path when
-  the fast path breaks — never a spinner that never resolves, never a hard
+  the fast path breaks, never a spinner that never resolves, never a hard
   error.
 - **One runaway request can't starve everyone else** sharing the provider's
   capacity.
@@ -81,14 +73,14 @@ spoken audio on a live, latency-sensitive path, and you'll run this at real
 scale (dozens-plus concurrent generations against a shared provider quota).
 
 **Skip when** audio is generated once, ahead of time, with nobody waiting live
-(a nightly batch render) — you only need the loudness and concatenation
+(a nightly batch render), you only need the loudness and concatenation
 pieces (steps 6–7), not the streaming apparatus. Skip entirely if TTS calls
 are rare enough that a shared concurrency ceiling will never bind.
 
 ## Ingredients
 
 - An LLM that supports streaming output (token/SSE deltas).
-- A TTS provider offering a fast/cheap tier AND a slower/higher-quality tier,
+- A TTS provider offering a fast/cheap tier and a slower/higher-quality tier,
   a documented per-account concurrency ceiling, and ideally a low-latency
   streaming-input mode.
 - `ffmpeg` (or an equivalent) on the audio-serving host, for silence
@@ -103,7 +95,7 @@ exist: plain batch (generate everything, upload once, hand back one URL);
 progressive multi-track (return after the first chunk, keep synthesizing and
 uploading the rest in the background, the player drains chunks gaplessly);
 and a true bytestream (proxy the provider's own audio stream straight to the
-client). Pick progressive if your client already has — or can cheaply build —
+client). Pick progressive if your client already has, or can cheaply build,
 a gapless multi-track queue: it captures most of the latency win without a
 client audio-engine rewrite, and it degrades to plain batch trivially.
 
@@ -112,19 +104,19 @@ alone.** Break at author-placed pause markers first. Both extremes are wrong:
 too few chunks and one slow chunk (usually the last) sits on the critical
 path of the whole request; too many chunks and the tail becomes a queue of
 stragglers that blows your latency budget once real per-request round-trip
-overhead dominates. Tune target chunk size empirically against the SPECIFIC
-tier's measured per-request latency — a size that's right for a fast tier is
+overhead dominates. Tune target chunk size empirically against the specific
+tier's measured per-request latency, a size that's right for a fast tier is
 wrong for a slow one.
 
 **3. Preserve authored pauses as real silence, translated per model tier.** A
 pause marker in your source script must survive to a real gap in the audio.
-Expressive/high-quality model tiers often only honor inline pause CUES (a
+Expressive/high-quality model tiers often only honor inline pause cues (a
 "[short pause]"/"[long pause]"-style tag) and will otherwise run straight
 through or mis-render a literal pause syntax; fast/cheap tiers often honor
 literal pause syntax natively. Classify pauses by depth: small in-line pauses
 can ride as whatever native syntax that specific tier understands; the
-deepest, author-marked holds should become REAL reinjected silence at a chunk
-boundary — synthesize a silent clip and splice it in — so a model that
+deepest, author-marked holds should become real reinjected silence at a chunk
+boundary, synthesize a silent clip and splice it in, so a model that
 doesn't understand your pause syntax can never swallow it. See
 `reference/chunk-and-pace.ts`.
 
@@ -133,8 +125,8 @@ ceiling as the real constraint.** Give the at-tap/interactive path (someone
 actively waiting) the fast/cheap tier; reserve the expensive, most expressive
 tier for anything you can pre-generate ahead of need, so its slower
 per-request cost never sits on a human's critical path. The provider's
-concurrency ceiling is usually account-wide — shared across every concurrent
-user AND any background pre-generation — so treat it as a semaphore your
+concurrency ceiling is usually account-wide, shared across every concurrent
+user and any background pre-generation, so treat it as a semaphore your
 dispatcher must respect, and make a rate-limit response retry with backoff
 rather than fail the whole generation; a single 429 shouldn't dump an entire
 piece to the fallback tier.
@@ -142,7 +134,7 @@ piece to the fallback tier.
 **5. Give every synthesis request its own strongly-referenced timeout,
 chained to a caller-level abort.** A composite/derived abort signal built
 from a caller signal plus a timeout, with nothing holding the timeout
-strongly, can silently fail to fire in some runtimes — the request just
+strongly, can silently fail to fire in some runtimes, the request just
 hangs. Use an explicit timer you hold directly and clear in a `finally`, so a
 hung request always actually dies and frees its concurrency slot. One request
 stuck open starves every other concurrent user of that shared quota.
@@ -152,58 +144,56 @@ compressed audio chunks (and any reinjected silence) together with a raw
 byte-copy is fast, but it leaves either wrong duration metadata (a player's
 progress bar reads only the first chunk's header) or audible micro-glitches
 at seams where frame boundaries don't align. Re-encode through the format's
-real encoder in the same pass — still well under a second for a multi-minute
-piece — and you get one continuous, gapless file with correct metadata.
+real encoder in the same pass, still well under a second for a multi-minute
+piece, and you get one continuous, gapless file with correct metadata.
 
 **7. Normalize loudness in the same encoding pass.** Fold a
 loudness-normalization filter into step 6's re-encode (one filter pass, no
 added latency) targeting a standard loudness level with a true-peak ceiling,
 so every generated piece sounds the same volume regardless of voice, model
-tier, or generation date — instead of drifting piece to piece.
+tier, or generation date, instead of drifting piece to piece.
 
 **8. Build the failure ladder before you ship, and detect every rung.** Name
-every point that can fail — upstream text generation stalls, TTS fails to
-connect, TTS returns no audio within budget, a mid-stream error — and give
+every point that can fail, upstream text generation stalls, TTS fails to
+connect, TTS returns no audio within budget, a mid-stream error, and give
 each a wall-clock detection budget and a fallback action. The last rung is
 always a plain batch/fallback path that already works, never new code
 written just for the failure case. A tier that's higher quality in the demo
 but empirically breaks your latency budget on the interactive path isn't a
-bug to patch — it's a signal to keep it pre-generate-only until proven
+bug to patch. It's a signal to keep it pre-generate-only until proven
 otherwise.
 
 **9. Instrument the seams, not just the total.** Log time-to-first-audio-byte,
 per-chunk synthesis time, total stream duration, and which fallback rung (if
 any) fired, per generation. A single "it took 20 seconds" number can't tell
 you whether the slow part was upstream generation, the TTS round-trip, or
-concatenation — and you need that breakdown to tune step 2's chunk size
+concatenation, and you need that breakdown to tune step 2's chunk size
 against reality instead of guessing.
 
-## The receipts
+## Evidence
 
-All numbers from origin production (a live voice pipeline turning
-AI-generated narration into streamed audio, real usage). Full citations in
-the internal evidence file — not published.
+From a live voice pipeline turning AI-generated narration into streamed audio.
 
 | Claim | Number |
 |---|---|
 | Progressive delivery's first-audio win | first chunk observed ready in ~2–3s in a real smoke test, vs a ~20–60s whole-piece batch bake |
 | Fast/cheap tier vs expressive tier | roughly 5–6x faster, about half the per-request cost, at a real quality tradeoff judged acceptable for the interactive path |
-| Expressive tier, cold, plain-concat model | several-tens-of-seconds floor even before variance — whichever chunk finishes last always sits on the critical path |
-| Provider concurrency ceiling | account-wide, shared across concurrent users AND background pre-generation, a small single-digit number of simultaneous requests at the plan tier in use |
-| Re-encode cost at concat time | low hundreds of milliseconds for a multi-minute piece — cheap insurance against seam glitches and wrong duration metadata |
+| Expressive tier, cold, plain-concat model | several-tens-of-seconds floor even before variance, whichever chunk finishes last always sits on the critical path |
+| Provider concurrency ceiling | account-wide, shared across concurrent users and background pre-generation, a small single-digit number of simultaneous requests at the plan tier in use |
+| Re-encode cost at concat time | low hundreds of milliseconds for a multi-minute piece, cheap insurance against seam glitches and wrong duration metadata |
 | A real slice of the fallback rate, pre-fix | roughly a quarter of all fallbacks traced to one bug class: a chunk containing only non-spoken cue markup synthesized as literally empty text, which the provider rejected outright |
 
 ## What might go wrong
 
 - **The silent-timeout footgun.** Bites when a composite/derived abort
   signal is built from a caller signal plus a timeout, but nothing keeps that
-  timeout strongly referenced — some runtimes garbage-collect the timer and
+  timeout strongly referenced, some runtimes garbage-collect the timer and
   the abort never fires. Symptom: a single request hangs for minutes,
   invisibly holding a shared concurrency slot, and every other concurrent
   generation queues behind it or fails. Prevention: an explicit timer object
   you hold and clear yourself, never a derived signal you don't retain.
 - **The pause-translation mismatch.** Bites when you swap voice model tiers
-  (or A/B two) without re-checking how each honors your pause syntax — one
+  (or A/B two) without re-checking how each honors your pause syntax, one
   tier honors literal pause markup natively, another needs inline cue tags
   instead. Symptom: authored silences "run straight through," and a piece
   with deliberate holds reads flat and rushed. Prevention: treat
@@ -211,7 +201,7 @@ the internal evidence file — not published.
   identical pacing across tiers.
 - **Accent/persona drift.** Bites when an expressive model synthesizes many
   small chunks of the same "voice" independently, with no cross-chunk
-  context — at a low stability/consistency setting, each chunk restarts its
+  context, at a low stability/consistency setting, each chunk restarts its
   interpretation of the voice and can wander mid-piece. Prevention: raise
   the model's stability setting for any chunked-independent-synthesis path;
   accept the small expressiveness cost.
@@ -222,47 +212,46 @@ the internal evidence file — not published.
   real audio length. Prevention: step 6, always.
 - **The over-chunked tail.** Bites when chunk size is tuned by word count
   alone without accounting for real per-request round-trip cost on the
-  slower tier — many small chunks create a long tail of late-dispatched
+  slower tier, many small chunks create a long tail of late-dispatched
   requests contending for the same concurrency slots, and on the tier where
   per-request cost is high, the straggler tail blows the latency budget and
   the whole generation falls back to the faster tier. Prevention: tune
-  target chunk size against measured per-request latency on the SPECIFIC
+  target chunk size against measured per-request latency on the specific
   tier in use, not a fixed word count right for a different tier.
 - **Buffering that defeats streaming.** Bites when a compression middleware
   or edge cache sits in front of the streaming response and buffers the
-  whole body before forwarding — the client sees zero benefit from a
+  whole body before forwarding, the client sees zero benefit from a
   carefully built streaming pipeline because nothing arrives until the
   buffer flushes. Prevention: explicitly disable compression and any
   edge-buffering on the streaming route; verify with a raw client that bytes
   arrive incrementally, don't trust that it streamed in one browser tab.
 
-## The pulse
+## Keeping it healthy
 
 - A synthetic per-generation trace (time-to-first-byte, per-chunk timing,
-  which fallback rung fired) feeding a dashboard someone actually reads — a
+  which fallback rung fired) feeding a dashboard someone actually reads, a
   silent creep in fallback rate is the leading indicator that a provider
   quietly changed model behavior.
 - A percentage-rollout flag on the streaming/progressive path, keyed per-user
   so rollout is safe to move up or roll back without a redeploy, and so one
   user's experience stays consistent session to session.
 - Periodic listening spot-checks against the loudness target and pause
-  fidelity — a provider can silently change model behavior on their end;
+  fidelity, a provider can silently change model behavior on their end;
   only ears (or an automated loudness scan) catch a drift a latency
   dashboard won't.
 - Whoever owns this pipeline re-reads the failure ladder (step 8) after
-  every provider model/tier change — the fallback rungs and their budgets
+  every provider model/tier change, the fallback rungs and their budgets
   are the part most likely to silently rot as providers ship new versions.
 
 ## The skill
 
-The installable skill and its reference code, in full — copy any file, or grab the whole bundle above. This is what an agent follows to build the pattern in your codebase.
+The skill and its reference code, in full. This is what an agent follows to build the pattern in your codebase. Copy any file here, or get every guide as one kit from [naturate.io/recipes](https://www.naturate.io/recipes?utm_source=agent-recipes&utm_medium=skill#kit).
 
 <SkillFiles slug="voice-ai-pipeline" />
 
-## Provenance
+## Where this comes from
 
 Abstracted from a production voice pipeline that turns AI-authored narration
 into streamed audio for a live, latency-sensitive listening experience.
-Patterns and shapes only — no source code crosses this document, and
-origin-identifying details (provider names, model identifiers, ticket
-numbers, file paths) live only in the internal evidence file beside it.
+It shares patterns and shapes, with no source code and no provider or model
+names.

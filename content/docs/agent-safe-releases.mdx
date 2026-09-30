@@ -1,0 +1,70 @@
+---
+title: Let agents ship without breaking production
+description: When agents merge often, the code that was tested and the code that gets deployed drift apart. Tie every check to one commit and its build, deploy exactly that, and confirm what is live.
+icon: Rocket
+recipe: true
+system: Agent-safe releases
+maturity: internal
+---
+
+<MaturityBadge level="internal" showHint />
+
+## The result
+
+Agents open and merge pull requests all day. Production only ever runs a build whose exact commit passed every required check, releases go out one at a time, and after each one something confirms which commit is live.
+
+## Use this when
+
+Changes land faster than a person can watch each deploy, or more than one agent can merge.
+
+Skip it when one person deploys by hand a few times a month and watches it happen.
+
+## The rule
+
+Validation belongs to a commit and the build made from it. It does not belong to a branch.
+
+"Main is green" says nothing about what is running, because main keeps moving. "Commit `a1b2c3` passed, and the build from `a1b2c3` is what is live" is a statement you can check.
+
+## The release loop
+
+**1. Choose a candidate.** Bring the current main branch into the release branch, then pin one commit. That commit is the candidate.
+
+**2. Run every required check on the candidate.** Tests, build, review, stage verification, migration checks. Results from a different commit do not count, however similar the code.
+
+**3. Deploy the build made from that commit.** Build once and promote that build. If the pipeline rebuilds from the branch at deploy time, it is deploying something that was never tested.
+
+**4. Let later merges wait.** A merge to main after the candidate was chosen does not cancel the release and does not join it. It goes in the next one. If the candidate itself changes, start the checks again.
+
+**5. One production deploy at a time.** Queue them. An older release must never finish after a newer one and replace it.
+
+**6. Confirm what is live.** Expose a small health endpoint that reports the environment and the commit. After every deploy, read it and compare. Download [verify-release.mjs](/skills/agent-safe-releases/reference/verify-release.mjs) for the comparison. Then run a short smoke test against production.
+
+**7. Keep the gates agents cannot skip.** Agents get rights to push branches and open pull requests. Merging needs the required checks. Anything that cannot be undone needs a person.
+
+On a busy repository, a merge queue and a single deployment pipeline do steps 4 and 5 for you.
+
+If your pipeline cannot pin a commit or promote a build, fix that first. Until then, do not describe a release as validated.
+
+## Database changes
+
+- The migration file is committed with the code that needs it, and has been run somewhere that is not production.
+- Migrate first, deploy the code second. Code that reads a new column before the column exists takes down every query that touches the table.
+- Preview builds must not share the production database. If a preview build runs migrations against production, an unmerged branch has already changed production. Until previews have their own database, treat every preview build as a production write.
+
+## What goes wrong
+
+- **A preview build serves the production domain.** It runs without production settings, so sign-in fails for everyone. Nothing alerts, because a deploy did succeed. The health endpoint in step 6 catches it: the environment reads "preview".
+- **Production is stale and nobody knows.** Merges succeed and builds succeed, but the domain is not pointed at the new build. The commit reported by the health endpoint stops changing.
+- **The local build passes and the remote build fails.** A file that exists only on one machine satisfied an import. Build from a clean checkout of the candidate, never from a working directory.
+- **An older release overwrites a newer one.** Two deploys ran at once and the slower one finished last.
+- **A check passed, on another commit.** The pull request was green before the last push. Read the commit the checks ran on.
+
+## Test it
+
+Deploy a candidate and confirm the health endpoint reports its commit. Merge something else to main and confirm production did not change. Point the verification script at a preview build and confirm it fails. Start two deploys together and confirm the second waits.
+
+## Evidence
+
+This is the release rule on projects where agents merge many times a day. Each item under "What goes wrong" happened on one of them before the matching step existed. The verification script has offline tests for a matching commit, a different commit, a preview environment and a missing field. It does not deploy anything.
+
+[Agent implementation instructions](/skills/agent-safe-releases/SKILL.md).

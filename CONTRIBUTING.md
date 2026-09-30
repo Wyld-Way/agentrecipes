@@ -11,7 +11,7 @@ A complete implementation recipe has readable instructions, a scoped SKILL.md an
 ## Evidence
 
 - Draft: implementation or testing is incomplete.
-- Internal: evidence from the original implementation, not independent adoption.
+- In production: evidence from the original implementation, not independent adoption.
 - Field-tested: another person implemented the recipe with recorded results.
 - Proven: evidence from at least two independent implementations.
 

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import manifest from '@/lib/skill-manifest.json';
+import { kitUrl } from '@/lib/shared';
 
 type SkillFile = { path: string; url: string; bytes: number; text: string };
 type SkillEntry = { zip?: string; files: SkillFile[] };
@@ -21,13 +22,13 @@ export function SkillDownload({ slug }: { slug: string }) {
   if (!entry || entry.files.length === 0) return null;
   return <div className="not-prose my-6 rounded-lg border bg-fd-card p-4">
     <div className="flex flex-wrap items-center justify-between gap-3">
-      <div><p className="text-sm font-semibold">Try this recipe in your own project</p><p className="mt-1 text-xs text-fd-muted-foreground">Read the instructions and reference files before running or adapting them.</p></div>
-      {entry.zip && <a href={entry.zip} download={`${slug}-skill.zip`} className="rounded-md bg-fd-primary px-3 py-2 text-sm font-medium text-fd-primary-foreground">Download files (.zip)</a>}
+      <div><p className="text-sm font-semibold">Try this recipe in your own project</p><p className="mt-1 text-xs text-fd-muted-foreground">Read the files below first. The download for the whole kit asks for your email.</p></div>
+      <a href={kitUrl('download', slug)} className="rounded-md bg-fd-primary px-3 py-2 text-sm font-medium text-fd-primary-foreground">Get the kit (.zip)</a>
     </div>
     <ul className="mt-4 divide-y divide-fd-border rounded-md border">
       {entry.files.map((file) => <li key={file.path} className="flex flex-wrap items-center justify-between gap-3 px-3 py-2">
         <code className="break-all font-mono text-xs">{file.path}</code>
-        <div className="flex shrink-0 items-center gap-2"><span className="text-xs text-fd-muted-foreground">{humanBytes(file.bytes)}</span><CopyButton text={file.text} /><a href={file.url} download={file.path.split('/').pop()} className="rounded-md border px-2.5 py-1 text-xs font-medium hover:bg-fd-accent">Download</a></div>
+        <div className="flex shrink-0 items-center gap-2"><span className="text-xs text-fd-muted-foreground">{humanBytes(file.bytes)}</span><CopyButton text={file.text} /></div>
       </li>)}
     </ul>
     <p className="mt-3 text-xs leading-5 text-fd-muted-foreground">Start in a test project with synthetic data. A skill file provides instructions; it does not grant permissions, start an autonomous process or establish compatibility with every agent host. Check this guide’s evidence and applicable file-specific licence.</p>

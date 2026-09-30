@@ -10,3 +10,16 @@ html > body[data-scroll-locked] {
   margin-right: 0px !important;
   --removed-body-scroll-bar-size: 0px !important;
 }
+
+/* Naturate greens, so the library reads as part of naturate.io. */
+:root {
+  --color-fd-primary: #064e3b;
+  --color-fd-primary-foreground: #ffffff;
+  --color-fd-ring: #064e3b;
+}
+
+.dark {
+  --color-fd-primary: #7bb661;
+  --color-fd-primary-foreground: #06281f;
+  --color-fd-ring: #7bb661;
+}

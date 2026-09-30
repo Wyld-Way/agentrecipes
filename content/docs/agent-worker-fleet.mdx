@@ -1,67 +1,58 @@
 ---
 title: "Run a fleet of AI agents on real work without babysitting them"
-description: "Several agents at once, on a schedule, while you're not watching — and it keeps going wrong: they clobber each other, run on your laptop with your credentials, stop to ask permission for everything, or fail silently for days. Here's the pattern that keeps a fleet safe and honest: isolated ephemeral workers, output-gated not permission-gated, fan-out caps, and a dumb watchdog that pages on silence."
+description: "Several agents at once, on a schedule, while you're not watching, and it keeps going wrong: they clobber each other, run on your laptop with your credentials, stop to ask permission for everything, or fail silently for days. Here's the pattern that keeps a fleet safe and honest: isolated ephemeral workers, output-gated not permission-gated, fan-out caps, and a dumb watchdog that pages on silence."
 icon: Network
 recipe: true
-system: "the shifts model"
-maturity: draft
+system: "agent worker fleet"
+maturity: internal
 steps:
   - name: "Never run unattended work on your own machine"
-    text: "Workers run in isolated, ephemeral environments — cloud sandbox or CI runner, fresh per task, torn down after. No long-lived working tree means no clobbering and no state carryover. (The single strongest signal in our history: everything scheduled on the laptop died; everything headless-in-CI never missed.)"
-  - name: "Gate dispatch manually — ask before you fan out"
-    text: "One accountable human triggers each batch; there is no idle auto-scheduler spawning work. Work flows: umbrella conversation → decompose into tickets with explicit done-conditions → dispatch each to ONE worker, scoped so they don't collide → stitch (review every landing) → digest for the human. Coordination is by decomposition, not by agents chatting."
+    text: "Workers run in isolated, ephemeral environments, cloud sandbox or CI runner, fresh per task, torn down after. No long-lived working tree means no clobbering and no state carryover. (Schedules that depend on a personal machine miss runs. Headless jobs in CI do not.)"
+  - name: "Gate dispatch manually, ask before you fan out"
+    text: "One accountable human triggers each batch; there is no idle auto-scheduler spawning work. Work flows: umbrella conversation → decompose into tickets with explicit done-conditions → dispatch each to one worker, scoped so they don't collide → stitch (review every landing) → digest for the human. Coordination is by decomposition, not by agents chatting."
   - name: "Verify output, not permissions"
-    text: "The default guardrail is the work being checked — tests pass, build is green, the PR diff matches intent — not a human approving each action. Reserve human gates for a tiny irreducible set (for us: money, production data, and anything published outward). An already-approved task is pre-authorized; don't re-gate it. Everything else: the worker decides and ships within its lane, and you review the result."
+    text: "The default guardrail is the work being checked, tests pass, build is green, the PR diff matches intent, not a human approving each action. Reserve human gates for a tiny irreducible set (typically money, production data, and anything published outward). An already-approved task is pre-authorized; don't re-gate it. Everything else: the worker decides and ships within its lane, and you review the result."
   - name: "Cap fan-out at every layer"
-    text: "A wake chain that spawns wakes needs hard ceilings or it swarms: a depth limit (no spawning past N generations), a breadth limit (a single root task can pull at most K workers across its whole tree, ever), a per-dispatch concurrency limit, and — if workers share a quota — make exhaustion degrade visibly (a logged \"skipped\"), never silently."
+    text: "A wake chain that spawns wakes needs hard ceilings or it swarms: a depth limit (no spawning past N generations), a breadth limit (a single root task can pull at most K workers across its whole tree, ever), a per-dispatch concurrency limit, and, if workers share a quota, make exhaustion degrade visibly (a logged \"skipped\"), never silently."
   - name: "Build a dumb watchdog, and treat silence as failure"
-    text: "The most important component is the dumbest: a dead-man's switch that is dumber than what it watches — no AI, no dispatch, just \"did the expected work post something in the last N hours? If not, page a human.\" If a worker ran but produced nothing, that is as bad as not running at all — wire the alarm to silence, not just to errors. See reference/heartbeat-watchdog.sh."
+    text: "The most important component is the dumbest: a dead-man's switch that is dumber than what it watches, no AI, no dispatch, just \"did the expected work post something in the last N hours? If not, page a human.\" If a worker ran but produced nothing, that is as bad as not running at all, wire the alarm to silence, not just to errors. See reference/heartbeat-watchdog.sh."
   - name: "Avoid the shared-tree hazard explicitly"
     text: "Ephemeral fresh-checkout-per-task is the clean fix. Where sessions do share a tree, stage with explicit pathspecs (never add -A, which sweeps a neighbor's WIP), rebase with autostash, never force past a conflict, and make the sync fail-open (offline or locked → exit cleanly, never block a session)."
   - name: "Observe on probation windows, not calendar dates"
-    text: "Each of our dead versions was designed in a day and declared dead in three — so no failure mode was ever watched long enough to fix. Give a new runtime a real probation window and resist redesigning before the evidence is in. If it needs a fifth redesign in two weeks, the honest conclusion is that standing autonomy is premature, not that you need a sixth."
+    text: "A runtime that is designed in a day and abandoned three days later was never watched long enough for anyone to learn why it failed. Give a new runtime a real probation window and resist redesigning before the evidence is in. If it keeps needing a redesign every few days, the honest conclusion is that standing autonomy is premature."
 ---
 
-<p className="-mt-2 text-fd-muted-foreground">
-  Recipe: <strong className="text-fd-foreground">the shifts model</strong>
-</p>
-
 <div className="not-prose my-6 rounded-lg border bg-fd-card p-4 text-sm">
-  <div className="mb-2"><MaturityBadge level="draft" showHint /></div>
+  <div className="mb-2"><MaturityBadge level="internal" showHint /></div>
   <dl className="grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1 text-fd-muted-foreground">
-    <dt className="font-medium text-fd-foreground">System</dt><dd>agent worker fleet (the shifts model)</dd>
-    <dt className="font-medium text-fd-foreground">Slug</dt><dd>agent-worker-fleet</dd>
-    <dt className="font-medium text-fd-foreground">Version</dt><dd>0.1</dd>
-    <dt className="font-medium text-fd-foreground">Origin</dt><dd>Abstracted from a production agent fleet that runs a real company's operations.</dd>
-    <dt className="font-medium text-fd-foreground">Consumers</dt><dd>origin fleet</dd>
-    <dt className="font-medium text-fd-foreground">License</dt><dd>CC-BY-SA-4.0 on publish</dd>
+    <dt className="font-medium text-fd-foreground">System</dt><dd>agent worker fleet</dd>
+    <dt className="font-medium text-fd-foreground">Origin</dt><dd>Abstracted from a production agent fleet.</dd>
   </dl>
 </div>
 
 <SkillDownload slug="agent-worker-fleet" />
 
-> **Read the maturity: this recipe is a draft.** Its most valuable part — the failure modes — is deeply proven (the origin watched three versions of this die in three weeks). The *current* runtime that survived is only weeks old. So take the principles and the scars as hard-won; do not treat "the current setup" as a proven blueprint. This recipe teaches you how to not die, more than it promises a finished machine.
 
 ## The problem
 
-You want AI agents doing real work — several at once, on a schedule, while you're
+You want AI agents doing real work, several at once, on a schedule, while you're
 not watching. But it keeps going wrong: two agents edit the same repo and clobber
 each other; they run on your laptop with your credentials; they stop to ask
 permission for every keystroke so nothing is actually unattended; and the worst
-one — they fail *silently*, and you discover days later that the whole fleet has
+one. They fail *silently*, and you discover days later that the whole fleet has
 been doing nothing while a dashboard cheerfully said "in progress."
 
 ## What you get
 
 A pattern for running a fleet of agent workers that stays safe and honest:
 
-- **Workers can't clobber each other or your machine** — each runs isolated and
+- **Workers can't clobber each other or your machine**: each runs isolated and
   ephemeral, never on your laptop, never with standing credentials.
-- **They actually run unattended** — because you gate their *output*, not every
+- **They actually run unattended**: because you gate their *output*, not every
   action, only a few genuinely dangerous things stop for you.
-- **Silence pages you** — a dead-man's switch treats "the work didn't happen" as a
-  first-class failure, so you never get a multi-day blackout again.
-- **Runaway fan-out is capped** — depth, breadth, and concurrency limits keep a
+- **Silence pages you**: a dead-man's switch treats "the work didn't happen" as a
+  first-class failure, so a multi-day blackout cannot go unnoticed.
+- **Runaway fan-out is capped**: depth, breadth, and concurrency limits keep a
   chain of agents from spawning a swarm.
 
 ## Use when / skip when
@@ -69,52 +60,49 @@ A pattern for running a fleet of agent workers that stays safe and honest:
 **Use when** you're running more than one or two agents, especially on a schedule
 or unattended, on work that touches a real repo or real systems.
 
-**Skip when** it's a single interactive agent you're watching — you don't need
+**Skip when** it's a single interactive agent you're watching, you don't need
 fleet machinery for that, and adding it is its own failure mode.
 
 ## Ingredients
 
-- **Isolated, ephemeral compute** for workers — cloud sandboxes / CI runners /
+- **Isolated, ephemeral compute** for workers, cloud sandboxes / CI runners /
   fresh containers. Never your primary machine.
-- **Scoped, expiring credentials** — per-worker tokens with the narrowest rights
+- **Scoped, expiring credentials**: per-worker tokens with the narrowest rights
   (branch-push, not merge; no prod, no secrets), and a spend cap on the model key.
-- **A verification gate** — CI (tests + build) and PR review the work flows through.
-- **A dumb watchdog** — a scheduled check that pages on silence. See
+- **A verification gate**: CI (tests + build) and PR review the work flows through.
+- **A dumb watchdog**: a scheduled check that pages on silence. See
   `reference/heartbeat-watchdog.sh`.
 
 ## The recipe
 
 **1. Never run unattended work on your own machine.** Workers run in isolated,
-ephemeral environments — cloud sandbox or CI runner, fresh per task, torn down
-after. No long-lived working tree means no clobbering and no state carryover. (The
-single strongest signal in our history: everything scheduled on the laptop died;
-everything headless-in-CI never missed.)
+ephemeral environments, cloud sandbox or CI runner, fresh per task, torn down
+after. No long-lived working tree means no clobbering and no state carryover. (Schedules that depend on a personal machine miss runs. Headless jobs in CI do not.)
 
-**2. Gate dispatch manually — ask before you fan out.** One accountable human
+**2. Gate dispatch manually, ask before you fan out.** One accountable human
 triggers each batch; there is no idle auto-scheduler spawning work. Work flows:
 umbrella conversation → decompose into tickets with explicit done-conditions →
-dispatch each to ONE worker, scoped so they don't collide → stitch (review every
+dispatch each to one worker, scoped so they don't collide → stitch (review every
 landing) → digest for the human. Coordination is by decomposition, not by agents
 chatting.
 
 **3. Verify output, not permissions.** The default guardrail is the work being
-*checked* — tests pass, build is green, the PR diff matches intent — not a human
-approving each action. Reserve human gates for a tiny irreducible set (for us:
-money, production data, and anything published outward). An already-approved task
+*checked*, tests pass, build is green, the PR diff matches intent, not a human
+approving each action. Reserve human gates for a tiny irreducible set (typically money, production data, and anything published outward). An already-approved task
 is pre-authorized; don't re-gate it. Everything else: the worker decides and ships
 within its lane, and you review the result.
 
 **4. Cap fan-out at every layer.** A wake chain that spawns wakes needs hard
 ceilings or it swarms: a depth limit (no spawning past N generations), a breadth
 limit (a single root task can pull at most K workers across its whole tree, ever),
-a per-dispatch concurrency limit, and — if workers share a quota — make exhaustion
+a per-dispatch concurrency limit, and, if workers share a quota, make exhaustion
 degrade *visibly* (a logged "skipped"), never silently.
 
 **5. Build a dumb watchdog, and treat silence as failure.** The most important
 component is the dumbest: a dead-man's switch that is *dumber than what it watches*
-— no AI, no dispatch, just "did the expected work post something in the last N
+no AI, no dispatch, just "did the expected work post something in the last N
 hours? If not, page a human." If a worker ran but produced nothing, that is as bad
-as not running at all — wire the alarm to silence, not just to errors. See
+as not running at all, wire the alarm to silence, not just to errors. See
 `reference/heartbeat-watchdog.sh`.
 
 **6. Avoid the shared-tree hazard explicitly.** Ephemeral fresh-checkout-per-task
@@ -123,31 +111,24 @@ is the clean fix. Where sessions do share a tree, stage with explicit pathspecs
 past a conflict, and make the sync fail-open (offline or locked → exit cleanly,
 never block a session).
 
-**7. Observe on probation windows, not calendar dates.** Each of our dead versions
-was designed in a day and declared dead in three — so no failure mode was ever
-watched long enough to fix. Give a new runtime a real probation window and resist
-redesigning before the evidence is in. If it needs a fifth redesign in two weeks,
-the honest conclusion is that standing autonomy is premature, not that you need a
-sixth.
+**7. Observe on probation windows, not calendar dates.** A runtime that is designed in a day and abandoned three days later was never watched long enough for anyone to learn why it failed. Give a new runtime a real probation window and resist
+redesigning before the evidence is in. If it keeps needing a redesign every few days, the honest conclusion is that standing autonomy is premature.
 
-## The receipts
+## Evidence
 
-From an agent fleet run in production (origin; details in the internal evidence
-file). Note the split: the *failure lessons* are proven; the *current runtime* is
-young.
+From an agent fleet run in production.
 
 | Claim | Number |
 |---|---|
-| Fan-out caps | depth ≤ 4 generations; ≤ 3 workers per root task, ever; per-dispatch concurrency 3 |
+| Fan-out caps | small fixed limits, for example depth of 4 generations, 3 workers per root task and 3 concurrent per dispatch |
 | Watchdog | checks ~1h after each scheduled slot, 3h lookback window, pages in &lt; 1h of silence |
 | Compute cost | ~$0 incremental (fits inside included CI minutes) + a per-worker, spend-capped model key |
-| The correlation that decided the architecture | every version scheduled on the laptop died; every headless-in-CI job never missed a run |
-| Current runtime age | ~1 week (why this recipe is `draft`, not proven) |
+| What decided the architecture | runs scheduled on a personal machine were missed; headless CI jobs were not |
 
-## What might go wrong (three deaths, one disease)
+## What might go wrong
 
-We ran this three times in three weeks and it died three times — the same death in
-different costumes. This section is the real value of the recipe.
+Early versions of a fleet tend to fail the same way in different costumes. This
+section is the real value of the recipe.
 
 - **Control-plane accretion (the underlying disease).** Every failure was answered
   by adding a component that *reports* state instead of one that *does* the work.
@@ -158,17 +139,17 @@ different costumes. This section is the real value of the recipe.
   happen. Bind status to artifacts, not to an agent's self-report.
 - **Approval choreography.** Re-gating already-approved work left a pile of tasks
   "approved and idle" for days. If approval isn't authorization, nothing ships.
-- **Silence with no watcher.** The designed failure signal was silence — and
+- **Silence with no watcher.** The designed failure signal was silence, and
   nobody was watching it, because the human *was* the monitoring system. Result: a
-  multi-day blackout nobody noticed. This is why step 5 exists.
+  multi-day blackout that nobody notices. This is why step 5 exists.
 - **Laptop dependency.** A schedule that quietly depends on your machine being
   awake isn't a schedule. If it can't run headless, it can't run unattended.
-- **Designed in a day, dead in three.** Moving too fast to ever observe the failure
+- **Redesigning before observing.** Moving too fast to ever observe the failure
   is itself the failure. See step 7.
 
-## The pulse
+## Keeping it healthy
 
-- The **dumb watchdog** is the pulse — a dead-man's switch on the fleet's output,
+- The **dumb watchdog** comes first: a dead-man's switch on the fleet's output,
   dumber than the fleet, pages on silence.
 - **Probation windows** on every runtime change; evidence before redesign.
 - A one-page operating model. If keeping the fleet alive needs more than a page of
@@ -176,14 +157,10 @@ different costumes. This section is the real value of the recipe.
 
 ## The skill
 
-The installable skill and its reference code, in full — copy any file, or grab the whole bundle above. This is what an agent follows to build the pattern in your codebase.
+The skill and its reference code, in full. This is what an agent follows to build the pattern in your codebase. Copy any file here, or get every guide as one kit from [naturate.io/recipes](https://www.naturate.io/recipes?utm_source=agent-recipes&utm_medium=skill#kit).
 
 <SkillFiles slug="agent-worker-fleet" />
 
-## Provenance
+## Where this comes from
 
-Abstracted mid-2026 from a production agent fleet that runs a real company's
-operations — and that failed and was rebuilt three times before the current
-runtime held. The failure history is documented and proven; the surviving runtime
-is young, which is why this ships at `maturity: draft`. Patterns and scars only;
-origin-identifying details live in the internal evidence file.
+Abstracted from a production agent fleet. It shares patterns and lessons, with no source code.

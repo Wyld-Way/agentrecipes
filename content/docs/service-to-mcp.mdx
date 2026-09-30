@@ -4,10 +4,10 @@ description: Expose a small, useful part of your service through MCP. Start with
 icon: Plug
 recipe: true
 system: Service to MCP
-maturity: draft
+maturity: internal
 ---
 
-<MaturityBadge level="draft" showHint />
+<MaturityBadge level="internal" showHint />
 
 ## The result
 
@@ -50,6 +50,30 @@ Ask: **“List the catalog items, then read the pond exhibition. Do not modify a
 A remote production version needs authentication, tenant-scoped authorization, rate limits, timeouts, safe error handling and a log policy that excludes secrets. Treat returned record text as data, not instructions. Do not expose this local demonstration to the internet as an authenticated production service.
 
 OpenAI's [MCP integration guide](https://developers.openai.com/api/docs/guides/tools-connectors-mcp) and Anthropic's [MCP connector guide](https://platform.claude.com/docs/en/agents-and-tools/mcp-connector) describe their respective API integrations. Test and document each host separately.
+
+## What running a public one taught us
+
+The example above is synthetic. These points come from operating a public, read-only MCP server that other people's agents call.
+
+**Write the tool description for the model.** It is the only documentation the calling model reads. Say when to call the tool, what each input means, and what an empty or unresolved answer means. Most wrong calls trace back to a vague description.
+
+**Offer one broad tool and one narrow one.** A general "get the facts for this place" tool, and a second that answers the single question people ask most. The narrow tool saves the model from assembling the answer itself and getting it wrong.
+
+**Put a version on the response.** Name the schema and its version in every payload. A consumer can check the family before trusting the shape, and you can change a field without breaking anyone silently.
+
+**Return an explicit "unresolved" with a reason.** A null tells the model nothing, and it will fill the gap. "Unresolved, provider timed out" gives it something true to say.
+
+**Serve every client from one endpoint.** Hosts that speak remote MCP use the URL. Hosts that only speak stdio get a thin wrapper over the same API. A second backend for one host will drift.
+
+**Keep runnable examples, and run them on a schedule.** A handful of small scripts that call the hosted server and assert they got a real answer. Run them on every change and once a day. A server that stops answering then shows up as a failed build, before a stranger meets it.
+
+**Prove the check can fail.** Point the same runner at a stub that returns nothing and confirm it goes red. A check that cannot fail is reporting safety it never verified.
+
+**Check the package against the server.** The package people install and the server it talks to are two things that can drift apart. Compare their tool list and input schema in CI.
+
+**Licensed upstream data needs the caller's own key.** Accept it as a header, never log it, and leave that part of the answer empty when it is absent.
+
+**Say what is not done.** If you are not yet listed in a registry, write that. A link that leads nowhere costs more trust than the sentence.
 
 ## Evidence and maintenance
 

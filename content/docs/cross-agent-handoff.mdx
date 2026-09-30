@@ -4,10 +4,10 @@ description: Let one assistant produce an artifact and another review it. Share 
 icon: MessagesSquare
 recipe: true
 system: Cross-agent handoff
-maturity: draft
+maturity: internal
 ---
 
-<MaturityBadge level="draft" showHint />
+<MaturityBadge level="internal" showHint />
 
 ## The result
 
@@ -50,6 +50,24 @@ Download [handoff.mjs](/skills/cross-agent-handoff/reference/handoff.mjs). Its p
 **4. Choose who advances the workflow.** A person can drive the steps in the chat products. An unattended version needs an explicitly configured orchestrator using supported APIs or agent runtimes, with its own credentials and budget. Connecting both assistants to the same MCP server does not by itself make either assistant message or wake the other.
 
 **5. Stop deliberately.** The reference allows one review, then returns to a person whether the verdict passes or requests changes. A new revision is a new explicit handoff, not an automatic debate. Add a timeout, cancellation and spend limit before calling paid model APIs.
+
+## What running two assistants side by side taught us
+
+These points come from daily work where two assistants from different vendors share the same projects.
+
+**Continue an existing thread before starting a new one.** Find the task the other assistant already has open and send to it by its exact identifier. A second thread on the same task splits the context in two.
+
+**Send a compact handoff.** State what is wanted, what has been decided, and which files matter. Do not ask the receiver to scan everything again.
+
+**Assume the other assistant knows nothing.** It did not see your conversation. Anything it needs must be in the handoff or in a file both can read.
+
+**Give them one shared memory.** Both read the same notes at the start of a task and write back at the end. See [shared agent memory](/docs/shared-agent-memory).
+
+**Check whether the receiver can answer.** Some hosts accept a message and cannot send one back. Read the result where the receiver wrote it, and do not wait for a reply that cannot arrive.
+
+**Report a failed save as unsaved.** If the write to shared memory did not go through, say so. The next assistant will otherwise act on something that is not there.
+
+When both assistants also write code in the same repository, read [two agents, one repository](/docs/two-agents-one-repo).
 
 ## Test whether it helps
 

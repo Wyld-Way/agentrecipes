@@ -22,5 +22,5 @@ export const metadata: Metadata = {
   robots: indexable ? undefined : { index: false, follow: false, nocache: true, googleBot: { index: false, follow: false } },
 };
 export default function Layout({ children }: LayoutProps<'/'>) {
-  return <html lang="en" className={inter.className} suppressHydrationWarning><body className="flex flex-col min-h-screen"><RootProvider>{children}</RootProvider></body></html>;
+  return <html lang="en" className={inter.className} suppressHydrationWarning><body className="flex flex-col min-h-screen"><RootProvider theme={{ defaultTheme: 'light' }}>{children}</RootProvider></body></html>;
 }
