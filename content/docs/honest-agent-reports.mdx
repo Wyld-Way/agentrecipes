@@ -1,0 +1,79 @@
+---
+title: Stop agents overstating what they did
+description: An agent says "done" and it is on a branch nobody can see. It says "verified" and it read the code. Here is how to make an agent's report mean what it says, and how to catch the ones that do not.
+icon: ClipboardCheck
+recipe: true
+system: Evidence-bound reporting
+maturity: internal
+---
+
+<MaturityBadge level="internal" showHint />
+
+## The result
+
+When an agent reports on its work, each status word has one meaning and comes with the evidence for it. "Deployed" names the revision that is live. "Tests pass" includes the output. A failure is reported as a failure. A daily check reopens anything marked done without proof.
+
+## Use this when
+
+You act on what agents tell you without redoing the work yourself. That is the point of delegating, and it only holds if the reports are true.
+
+## Where reports drift from the truth
+
+None of these is a lie. Each is a cheaper check standing in for the real one.
+
+| The report says | What actually happened |
+|---|---|
+| "Fixed" | The code looks right. Nothing was run. |
+| "Tests pass" | Unit tests pass. The connected flow was never exercised. |
+| "Done" | It is on a branch. The person who asked sees no change. |
+| "Deployed" | The merge succeeded. Nobody looked at what is live. |
+| "Saved" | The write failed and the agent moved on. |
+| "That file was never built" | The local copy is behind the remote. |
+| "Waiting on approval" | Nobody was asked. The agent invented the requirement. |
+
+## The rules
+
+**1. Give each status word one meaning.** Write the ladder down and use only these words.
+
+| Word | Means | Evidence |
+|---|---|---|
+| Written | The change exists | A diff |
+| Tested | Checks ran on it | The command and its output |
+| Merged | It is on the main branch | The commit |
+| Deployed | It is what production runs | The live revision |
+| Verified | It was exercised in the real place | What was done and what was seen |
+
+**2. Attach the evidence to the claim.** A status with no artifact behind it is an opinion. Download [claim-check.mjs](/skills/honest-agent-reports/reference/claim-check.mjs) for a small check that rejects a claim whose evidence is missing or of the wrong kind.
+
+**3. Report failures with their output.** "Three tests fail" followed by the output. Never "mostly working".
+
+**4. Say what was skipped.** A step that did not run is named as not run.
+
+**5. A failed save is reported as unsaved.** Whoever reads the record next will act on it.
+
+**6. Check the remote before calling anything missing.** A stale copy looks exactly like a deletion.
+
+**7. A branch is not a delivery.** If the person who asked cannot see the change, it is not done. Ship what can be undone and put the open question beside it.
+
+**8. Name who set each constraint.** When an agent stops for approval, it states who requires it and where that is written. A gate nobody set is removed.
+
+**9. Commit as the agent.** When a person's name is on a machine's commit, nobody can later tell a decision from a side effect. A co-author line in the message does not change authorship.
+
+**10. Run a daily claim check.** Something independent of the worker compares every item marked done with its evidence and reopens the ones without any.
+
+## Keep status tied to artifacts
+
+A board an agent updates by hand will say "in progress" while nothing is running. Derive status from things that exist: an open pull request, a passing check, a live revision. Where that is not possible, show the age of the last evidence next to the status.
+
+## What goes wrong
+
+- **Hedging replaces reporting.** "Should be working" and "appears complete" are neither claims nor admissions. Require a word from the ladder.
+- **The summary outruns the work.** The final message describes the plan, not what happened. Build it from the evidence list.
+- **Caution is mistaken for honesty.** An agent parks finished work for review nobody can perform because nothing is visible. Undoing a merge is cheap; a round trip is not.
+- **The checker trusts the worker.** A claim check that reads the worker's own summary verifies nothing. It reads the artifacts.
+
+## Evidence
+
+These rules are the reporting standard on projects where agents do most of the building and one person reviews. Each row in the first table is a pattern taken from real agent reports. The claim check has offline tests for each status word, for missing evidence and for hedged wording.
+
+[Agent implementation instructions](/skills/honest-agent-reports/SKILL.md).

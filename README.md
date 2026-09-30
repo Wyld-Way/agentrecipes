@@ -36,4 +36,8 @@ npm run dev
 
 The deployed URL is configured by `NEXT_PUBLIC_SITE_URL`; the fallback remains the existing Vercel host. The intended Naturate subdomain must be attached, resolve correctly and pass HTTPS/link checks before changing that setting. `PUBLIC_INDEX=true` is a separate indexing release step. Do not conflate a draft PR, successful build, deployed preview and production launch.
 
-Before launch: clean build and type check, rendered-page and download tests, independent recipe/evidence review, archive and content privacy review, licence clarification, host integration tests and a real contact-path check. The library does not assign a new blanket licence by this change; preserve and review existing file-specific terms.
+Before launch: clean build and type check, rendered-page and download tests, independent recipe/evidence review, archive and content privacy review, host integration tests and a real contact-path check. The library does not assign a new blanket licence by this change; preserve and review existing file-specific terms.
+
+## Licence
+
+Code, skill files and reference code: Apache 2.0 (`LICENSE`). Guides in `content/docs`: CC BY-SA 4.0 (`LICENSE-CONTENT.md`). The Naturate name, logo and illustrations are not included. See `NOTICE`.

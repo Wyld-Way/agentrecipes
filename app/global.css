@@ -11,15 +11,55 @@ html > body[data-scroll-locked] {
   --removed-body-scroll-bar-size: 0px !important;
 }
 
-/* Naturate greens, so the library reads as part of naturate.io. */
+/* Naturate's palette, so the library reads as part of naturate.io. */
+@theme {
+  --color-dark-green: #064e3b;
+  --color-green: #7bb661;
+  --color-pale-green: #e4ecd9;
+  --font-display: var(--font-display-face), ui-sans-serif, system-ui, sans-serif;
+}
+
 :root {
+  --color-fd-background: #ffffff;
+  --color-fd-foreground: #14352b;
+  --color-fd-muted: #f4f7ee;
+  --color-fd-muted-foreground: #55645d;
+  --color-fd-card: #f7f9f3;
+  --color-fd-card-foreground: #14352b;
+  --color-fd-popover: #ffffff;
+  --color-fd-popover-foreground: #14352b;
+  --color-fd-border: #dfe6d5;
   --color-fd-primary: #064e3b;
   --color-fd-primary-foreground: #ffffff;
+  --color-fd-secondary: #eef2e6;
+  --color-fd-secondary-foreground: #14352b;
+  --color-fd-accent: #e4ecd9;
+  --color-fd-accent-foreground: #064e3b;
   --color-fd-ring: #064e3b;
 }
 
 .dark {
+  --color-fd-background: #0a1f19;
+  --color-fd-foreground: #e9efe3;
+  --color-fd-muted: #102a22;
+  --color-fd-muted-foreground: #a3b3a8;
+  --color-fd-card: #0f2820;
+  --color-fd-card-foreground: #e9efe3;
+  --color-fd-popover: #0f2820;
+  --color-fd-popover-foreground: #e9efe3;
+  --color-fd-border: #1f3d33;
   --color-fd-primary: #7bb661;
   --color-fd-primary-foreground: #06281f;
+  --color-fd-secondary: #14322a;
+  --color-fd-secondary-foreground: #e9efe3;
+  --color-fd-accent: #17392f;
+  --color-fd-accent-foreground: #cfe3bf;
   --color-fd-ring: #7bb661;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
 }
