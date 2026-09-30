@@ -3,7 +3,7 @@ title: "Give your AI agents a shared memory that survives every session"
 description: "Your agents forget everything when a session ends, re-derive settled facts, and contradict decisions nobody wrote down. Here's how to give them a durable, file-based shared brain — one place agents read at session start and write back at session end, so knowledge compounds instead of resetting."
 icon: Brain
 recipe: true
-system: "the office brain"
+system: "shared agent memory"
 maturity: internal
 steps:
   - name: "Make one repo the single source of truth (the \"constitution\")"
@@ -22,19 +22,11 @@ steps:
     text: "Memory rots without one."
 ---
 
-<p className="-mt-2 text-fd-muted-foreground">
-  Recipe: <strong className="text-fd-foreground">the office brain</strong>
-</p>
-
 <div className="not-prose my-6 rounded-lg border bg-fd-card p-4 text-sm">
   <div className="mb-2"><MaturityBadge level="internal" showHint /></div>
   <dl className="grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1 text-fd-muted-foreground">
-    <dt className="font-medium text-fd-foreground">System</dt><dd>the office brain (shared agent memory)</dd>
-    <dt className="font-medium text-fd-foreground">Slug</dt><dd>shared-agent-memory</dd>
-    <dt className="font-medium text-fd-foreground">Version</dt><dd>0.1</dd>
+    <dt className="font-medium text-fd-foreground">System</dt><dd>shared agent memory</dd>
     <dt className="font-medium text-fd-foreground">Origin</dt><dd>Abstracted from the shared brain of a production agent fleet.</dd>
-    <dt className="font-medium text-fd-foreground">Consumers</dt><dd>origin fleet</dd>
-    <dt className="font-medium text-fd-foreground">License</dt><dd>CC-BY-SA-4.0 on publish</dd>
   </dl>
 </div>
 
@@ -124,11 +116,10 @@ something worth writing later.
 
 ## The receipts
 
-From an agent fleet running this as its shared brain in production (origin;
-details in the internal evidence file):
+From an agent fleet running this as its shared brain in production:
 
 - **The storage layer survived three full execution-model rewrites untouched.**
-  The way the fleet *ran* agents was rebuilt three times in three weeks; the way
+  The way the fleet *ran* agents was rebuilt three times; the way
   it *stored knowledge* never changed. Decoupling memory from execution is why —
   and it's the single most load-bearing decision here.
 - **One-fact-per-file + an index** out-performed a single large memory file: agents
@@ -151,7 +142,7 @@ details in the internal evidence file):
 - **The monolith trap.** One giant memory file feels simpler and then becomes
   unsearchable and un-mergeable. Small files + an index from day one.
 - **Storing the derivable.** Memories that restate the code structure, the git
-  history, or the ticket are noise that buries the signal. Store only what is NOT
+  history, or the ticket are noise that buries the signal. Store only what is not
   recoverable from the repo itself — the non-obvious.
 - **The folder nobody opens.** If the read/write protocol isn't in the agent's
   standing instructions, the brain exists but never gets read or updated. The
@@ -178,8 +169,7 @@ The installable skill and its reference code, in full — copy any file, or grab
 
 ## Provenance
 
-Abstracted mid-2026 from the shared brain of a production agent fleet — the same
-system this recipe was written inside of. Patterns only; origin-identifying
-details live in the internal evidence file. The storage discipline is stable and
+Abstracted from the shared brain of a production agent fleet. It shares patterns,
+with no source code. The storage discipline is stable and
 long-proven; it is deliberately separate from the fleet's execution layer, which
 is not (and is not part of this recipe).

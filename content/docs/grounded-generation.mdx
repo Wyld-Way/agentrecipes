@@ -19,24 +19,16 @@ steps:
   - name: "Degrade to silence, never fabricate"
     text: "On timeout, thin data, or a source down, serve silence-with-reason for that axis — not stale data, not a guess. Wrap flaky sources in a circuit breaker (open after N consecutive failures, cool down, probe) so a struggling upstream fails to silence, fast."
   - name: "Fix accuracy from evidence, not anecdotes (the replay loop)"
-    text: "When someone reports \"this felt wrong,\" do NOT hand-patch from the anecdote — that way lies a spiral of contradictory local fixes. Instead: snapshot the raw data behind every generation; to investigate, replay that historical snapshot, grade it against your current rules, and if a rule is new, grade the whole population to find every similar case. Fix once, systematically. See reference/grounding-gate.ts for the grade primitive."
+    text: "When someone reports \"this felt wrong,\" do not hand-patch from the anecdote — that way lies a spiral of contradictory local fixes. Instead: snapshot the raw data behind every generation; to investigate, replay that historical snapshot, grade it against your current rules, and if a rule is new, grade the whole population to find every similar case. Fix once, systematically. See reference/grounding-gate.ts for the grade primitive."
   - name: "Measure grounding, count silence as integrity"
     text: "A single number: grounding = (grounded + silent) / (grounded + silent + violations). Silence counts toward integrity, not against it — a system that correctly says nothing is being honest. Only violations (unsourced, stale, or cardinal) score against you."
 ---
 
-<p className="-mt-2 text-fd-muted-foreground">
-  Recipe: <strong className="text-fd-foreground">grounded generation</strong>
-</p>
-
 <div className="not-prose my-6 rounded-lg border bg-fd-card p-4 text-sm">
   <div className="mb-2"><MaturityBadge level="internal" showHint /></div>
   <dl className="grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1 text-fd-muted-foreground">
-    <dt className="font-medium text-fd-foreground">System</dt><dd>grounded generation (the field-truth discipline)</dd>
-    <dt className="font-medium text-fd-foreground">Slug</dt><dd>grounded-generation</dd>
-    <dt className="font-medium text-fd-foreground">Version</dt><dd>0.1</dd>
+    <dt className="font-medium text-fd-foreground">System</dt><dd>grounded generation</dd>
     <dt className="font-medium text-fd-foreground">Origin</dt><dd>Abstracted from a production field-sensing engine.</dd>
-    <dt className="font-medium text-fd-foreground">Consumers</dt><dd>origin sensing engine</dd>
-    <dt className="font-medium text-fd-foreground">License</dt><dd>CC-BY-SA-4.0 on publish</dd>
   </dl>
 </div>
 
@@ -118,7 +110,7 @@ flaky sources in a circuit breaker (open after N consecutive failures, cool down
 probe) so a struggling upstream fails to silence, fast.
 
 **7. Fix accuracy from evidence, not anecdotes (the replay loop).** When someone
-reports "this felt wrong," do NOT hand-patch from the anecdote — that way lies a
+reports "this felt wrong," do not hand-patch from the anecdote — that way lies a
 spiral of contradictory local fixes. Instead: snapshot the raw data behind every
 generation; to investigate, replay that historical snapshot, grade it against your
 current rules, and if a rule is new, grade the whole population to find every
@@ -132,8 +124,7 @@ being honest. Only violations (unsourced, stale, or cardinal) score against you.
 
 ## The receipts
 
-From a production sensing engine running this discipline (origin; details in the
-internal evidence file):
+From a production sensing engine running this discipline:
 
 | Claim | Number |
 |---|---|
@@ -185,5 +176,4 @@ The installable skill and its reference code, in full — copy any file, or grab
 Abstracted mid-2026 from a production field-sensing engine whose whole purpose is
 to speak about the physical world without inventing it — its founding principle is
 that silence is a capability, not a fallback, and trust comes from restraint as
-much as accuracy. Patterns only; origin-identifying details live in the internal
-evidence file.
+much as accuracy. It shares patterns, with no source code.

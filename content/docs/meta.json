@@ -12,7 +12,6 @@
     "voice-ai-pipeline",
     "shared-agent-memory",
     "agent-worker-fleet",
-    "growth-loop-mechanics",
     "format"
   ]
 }

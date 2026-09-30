@@ -3,13 +3,13 @@ title: "Run a fleet of AI agents on real work without babysitting them"
 description: "Several agents at once, on a schedule, while you're not watching — and it keeps going wrong: they clobber each other, run on your laptop with your credentials, stop to ask permission for everything, or fail silently for days. Here's the pattern that keeps a fleet safe and honest: isolated ephemeral workers, output-gated not permission-gated, fan-out caps, and a dumb watchdog that pages on silence."
 icon: Network
 recipe: true
-system: "the shifts model"
+system: "agent worker fleet"
 maturity: draft
 steps:
   - name: "Never run unattended work on your own machine"
     text: "Workers run in isolated, ephemeral environments — cloud sandbox or CI runner, fresh per task, torn down after. No long-lived working tree means no clobbering and no state carryover. (The single strongest signal in our history: everything scheduled on the laptop died; everything headless-in-CI never missed.)"
   - name: "Gate dispatch manually — ask before you fan out"
-    text: "One accountable human triggers each batch; there is no idle auto-scheduler spawning work. Work flows: umbrella conversation → decompose into tickets with explicit done-conditions → dispatch each to ONE worker, scoped so they don't collide → stitch (review every landing) → digest for the human. Coordination is by decomposition, not by agents chatting."
+    text: "One accountable human triggers each batch; there is no idle auto-scheduler spawning work. Work flows: umbrella conversation → decompose into tickets with explicit done-conditions → dispatch each to one worker, scoped so they don't collide → stitch (review every landing) → digest for the human. Coordination is by decomposition, not by agents chatting."
   - name: "Verify output, not permissions"
     text: "The default guardrail is the work being checked — tests pass, build is green, the PR diff matches intent — not a human approving each action. Reserve human gates for a tiny irreducible set (for us: money, production data, and anything published outward). An already-approved task is pre-authorized; don't re-gate it. Everything else: the worker decides and ships within its lane, and you review the result."
   - name: "Cap fan-out at every layer"
@@ -22,19 +22,11 @@ steps:
     text: "Each of our dead versions was designed in a day and declared dead in three — so no failure mode was ever watched long enough to fix. Give a new runtime a real probation window and resist redesigning before the evidence is in. If it needs a fifth redesign in two weeks, the honest conclusion is that standing autonomy is premature, not that you need a sixth."
 ---
 
-<p className="-mt-2 text-fd-muted-foreground">
-  Recipe: <strong className="text-fd-foreground">the shifts model</strong>
-</p>
-
 <div className="not-prose my-6 rounded-lg border bg-fd-card p-4 text-sm">
   <div className="mb-2"><MaturityBadge level="draft" showHint /></div>
   <dl className="grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1 text-fd-muted-foreground">
-    <dt className="font-medium text-fd-foreground">System</dt><dd>agent worker fleet (the shifts model)</dd>
-    <dt className="font-medium text-fd-foreground">Slug</dt><dd>agent-worker-fleet</dd>
-    <dt className="font-medium text-fd-foreground">Version</dt><dd>0.1</dd>
-    <dt className="font-medium text-fd-foreground">Origin</dt><dd>Abstracted from a production agent fleet that runs a real company's operations.</dd>
-    <dt className="font-medium text-fd-foreground">Consumers</dt><dd>origin fleet</dd>
-    <dt className="font-medium text-fd-foreground">License</dt><dd>CC-BY-SA-4.0 on publish</dd>
+    <dt className="font-medium text-fd-foreground">System</dt><dd>agent worker fleet</dd>
+    <dt className="font-medium text-fd-foreground">Origin</dt><dd>Abstracted from a production agent fleet.</dd>
   </dl>
 </div>
 
@@ -93,7 +85,7 @@ everything headless-in-CI never missed.)
 **2. Gate dispatch manually — ask before you fan out.** One accountable human
 triggers each batch; there is no idle auto-scheduler spawning work. Work flows:
 umbrella conversation → decompose into tickets with explicit done-conditions →
-dispatch each to ONE worker, scoped so they don't collide → stitch (review every
+dispatch each to one worker, scoped so they don't collide → stitch (review every
 landing) → digest for the human. Coordination is by decomposition, not by agents
 chatting.
 
@@ -132,9 +124,8 @@ sixth.
 
 ## The receipts
 
-From an agent fleet run in production (origin; details in the internal evidence
-file). Note the split: the *failure lessons* are proven; the *current runtime* is
-young.
+From an agent fleet run in production. Note the split: the failure lessons are
+well evidenced, the surviving runtime is newer.
 
 | Claim | Number |
 |---|---|
@@ -142,12 +133,11 @@ young.
 | Watchdog | checks ~1h after each scheduled slot, 3h lookback window, pages in &lt; 1h of silence |
 | Compute cost | ~$0 incremental (fits inside included CI minutes) + a per-worker, spend-capped model key |
 | The correlation that decided the architecture | every version scheduled on the laptop died; every headless-in-CI job never missed a run |
-| Current runtime age | ~1 week (why this recipe is `draft`, not proven) |
 
-## What might go wrong (three deaths, one disease)
+## What might go wrong
 
-We ran this three times in three weeks and it died three times — the same death in
-different costumes. This section is the real value of the recipe.
+Early versions of a fleet tend to fail the same way in different costumes. This
+section is the real value of the recipe.
 
 - **Control-plane accretion (the underlying disease).** Every failure was answered
   by adding a component that *reports* state instead of one that *does* the work.
@@ -182,8 +172,7 @@ The installable skill and its reference code, in full — copy any file, or grab
 
 ## Provenance
 
-Abstracted mid-2026 from a production agent fleet that runs a real company's
-operations — and that failed and was rebuilt three times before the current
-runtime held. The failure history is documented and proven; the surviving runtime
-is young, which is why this ships at `maturity: draft`. Patterns and scars only;
-origin-identifying details live in the internal evidence file.
+Abstracted from a production agent fleet that was rebuilt more than once before
+its runtime held. The failure lessons are well evidenced and the surviving runtime
+is newer, which is why this guide is marked as a draft. It shares patterns and
+lessons, with no source code.

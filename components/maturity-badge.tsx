@@ -10,13 +10,13 @@ const STYLES: Record<
     label: 'Draft',
     className:
       'bg-neutral-100 text-neutral-700 border-neutral-300 dark:bg-neutral-800 dark:text-neutral-300 dark:border-neutral-700',
-    hint: 'No production receipts yet.',
+    hint: 'Not yet run in production.',
   },
   internal: {
-    label: 'Internal',
+    label: 'In production',
     className:
       'bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/60',
-    hint: 'Production receipts at the origin system (n=1).',
+    hint: 'Evidence from one production system.',
   },
   'field-tested': {
     label: 'Field-tested',
