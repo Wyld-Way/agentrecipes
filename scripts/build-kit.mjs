@@ -1,7 +1,8 @@
 // Builds the single-download kit from the reviewed public skill folders.
-// Run after adding, removing or editing anything under public/skills.
+// The archive is not served from this site. naturate.io hands it out after the
+// email form, so pass that repo's kit path as the first argument, or copy kit/ over.
 import { execFileSync } from 'node:child_process';
-import { existsSync, readdirSync, rmSync, statSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, rmSync, statSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { assertPublicPath } from './prepare-public-library.mjs';
@@ -26,10 +27,14 @@ export function kitEntries(skillsDir = join(root, 'public', 'skills')) {
   return entries;
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const skillsDir = join(root, 'public', 'skills');
-  const target = join(skillsDir, kitName);
+export function buildKit(target, skillsDir = join(root, 'public', 'skills')) {
   if (existsSync(target)) rmSync(target);
+  mkdirSync(dirname(target), { recursive: true });
   execFileSync('zip', ['-X', '-q', target, ...kitEntries(skillsDir)], { cwd: skillsDir });
-  console.log(`[kit] ${kitEntries(skillsDir).length} files written to public/skills/${kitName}`);
+  return kitEntries(skillsDir).length;
+}
+
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const target = resolve(process.argv[2] ?? join(root, 'kit', kitName));
+  console.log(`[kit] ${buildKit(target)} files written to ${target}`);
 }

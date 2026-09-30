@@ -1,6 +1,5 @@
 {
   "agent-worker-fleet": {
-    "zip": "/skills/agent-worker-fleet.zip",
     "files": [
       {
         "path": "SKILL.md",
@@ -17,7 +16,6 @@
     ]
   },
   "grounded-generation": {
-    "zip": "/skills/grounded-generation.zip",
     "files": [
       {
         "path": "SKILL.md",
@@ -34,7 +32,6 @@
     ]
   },
   "llm-prompt-ops": {
-    "zip": "/skills/llm-prompt-ops.zip",
     "files": [
       {
         "path": "SKILL.md",
@@ -57,7 +54,6 @@
     ]
   },
   "shared-agent-memory": {
-    "zip": "/skills/shared-agent-memory.zip",
     "files": [
       {
         "path": "SKILL.md",
@@ -86,7 +82,6 @@
     ]
   },
   "voice-ai-pipeline": {
-    "zip": "/skills/voice-ai-pipeline.zip",
     "files": [
       {
         "path": "SKILL.md",
